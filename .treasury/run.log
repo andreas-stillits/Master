@@ -1,0 +1,5 @@
+____________________________________________________________
+Run started: 2025-12-25 19:27:35
+Command line: msc config -u show
+____________________________________________________________
+19:27:35 | INFO     | cli.main         | program_exit | 				   Total program duration = 0.001 s

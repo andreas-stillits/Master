@@ -28,7 +28,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         "init",  # command name
         description="Initialize a default config.json file in the user's home directory.",
         help="Initialize a default config.json file in the user's home directory.",
-        epilog="Example (hard reset user-level config): <myproject> config -u init --force",
+        epilog="Example (hard reset user-level config): msc config -u init --force",
     )
     parser.add_argument(
         "--force",  # optional flag to overwrite existing file and recreate hardcoded defaults

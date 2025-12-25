@@ -29,7 +29,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         "show",
         description="Show current config in JSON format.",
         help="Show the current config in JSON format. (default: project-level config, use -u for user-level config)",
-        epilog="Example: <myproject> config [-u] show \n",
+        epilog="Example: msc config [-u] show \n",
     )
 
     parser.set_defaults(cmd=_cmd)

@@ -27,7 +27,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         "copy",
         description="Copy current user config in JSON format.",
         help="Copy the current user config in JSON format.",
-        epilog="Example: <myproject> config copy ./config_backup.json",
+        epilog="Example: msc config copy ./config_backup.json",
     )
     parser.add_argument(
         "output_path",

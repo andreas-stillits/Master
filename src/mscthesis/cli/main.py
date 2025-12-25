@@ -11,7 +11,6 @@ from .commands.config import get as config_get
 from .commands.config import init as config_init
 from .commands.config import set as config_set
 from .commands.config import show as config_show
-from .commands.run import test as some_command
 from .shared import (
     assemble_cli_overrides,
     derive_cli_flags_from_config,
@@ -29,7 +28,7 @@ def _build_parser() -> argparse.ArgumentParser:
     """Build the top-level argument parser for the CLI."""
     # create global parser
     parser = argparse.ArgumentParser(
-        prog="<myproject>", description="<myproject> Command Line Interface"
+        prog="mscthesis", description="Master Thesis Command Line Interface"
     )
     parser = derive_cli_flags_from_config(
         parser, "behavior"
@@ -60,7 +59,7 @@ def _build_parser() -> argparse.ArgumentParser:
     config_get.add_parser(config_subparsers)
     config_set.add_parser(config_subparsers)
     # ... add more commands here that act as subcommands of "config ..."
-    some_command.add_parser(subparsers)
+    # ...
     # === OTHER COMMANDS ===
 
     # ... add more top-level commands here ...
@@ -79,7 +78,7 @@ def main(argv: list[str] | None = None) -> int:
     """Main entry point for the CLI."""
     parser = _build_parser()
 
-    # Enable tab completion if argcomplete is available (user must run: 'eval "$(register-python-argcomplete <myproject>)"'
+    # Enable tab completion if argcomplete is available (user must run: 'eval "$(register-python-argcomplete mscthesis)"'
     # in bash per session or add to .bashrc (I did))
     if argcomplete is not None:
         argcomplete.autocomplete(parser)
@@ -99,10 +98,10 @@ def main(argv: list[str] | None = None) -> int:
     if not defaults.meta.user_config_path.is_file():
         print(
             f"User config file not found at: {defaults.meta.user_config_path}. "
-            "Please run '<myproject> config --user init' to initialize project configuration."
+            "Please run 'msc config --user init' to initialize project configuration."
         )
         print(
-            "NICETY: Optionally add the line 'eval '$(register-python-argcomplete <myproject>)'' "
+            "NICETY: Optionally add the line 'eval '$(register-python-argcomplete mscthesis)'' "
             "to your shell profile (.bashrc/.zshrc) for cli autocompletion. "
         )
         return 1  # error code in the terminal

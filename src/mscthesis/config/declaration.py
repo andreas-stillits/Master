@@ -36,7 +36,7 @@ class MetaConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid", json_schema_extra={"expose": False})
 
-    project_name: str = "myproject"
+    project_name: str = "mscthesis"
     user_config_path: Path = Path.home() / f".{project_name}" / "config.json"
     project_config_path: Path = Path.cwd() / "config.json"
     # magic strings and numbers -- underscores are to avoid name collision with internal logging fields
@@ -64,9 +64,7 @@ class BehaviorConfig(BaseModel):
         extra="forbid", json_schema_extra={"expose": True, "commands": []}
     )
 
-    storage_root: Path = Path(
-        "/home/andreasstillits/coding/ResearchProjectTemplate/storage"
-    )
+    storage_root: Path = Path.home() / "coding/master/.treasury"
     quiet: bool = False
     no_log: bool = False
     log_level: LogLevel = LogLevel.INFO
@@ -82,31 +80,31 @@ class BehaviorConfig(BaseModel):
 
 
 # some example config relating to a specific command
-class SomeCommandConfig(BaseModel):
-    """Configuration for process testing"""
+# class SomeCommandConfig(BaseModel):
+#     """Configuration for process testing"""
 
-    model_config = ConfigDict(
-        extra="forbid", json_schema_extra={"expose": True, "commands": ["test"]}
-    )
+#     model_config = ConfigDict(
+#         extra="forbid", json_schema_extra={"expose": True, "commands": ["test"]}
+#     )
 
-    enable_process_test: bool = False
-    test_data_path: Path = Path.home() / f".{MetaConfig().project_name}" / "test_data"
-    some_list: list[float] = [0.1, 0.2, 0.3]
+#     enable_process_test: bool = False
+#     test_data_path: Path = Path.home() / f".{MetaConfig().project_name}" / "test_data"
+#     some_list: list[float] = [0.1, 0.2, 0.3]
 
-    cli_hints: ClassVar[dict[str, str]] = {
-        "enable_process_test": "Flag to store as true",
-        "test_data_path": "provide path",
-        "some_list": "a list of floats",
-    }
+#     cli_hints: ClassVar[dict[str, str]] = {
+#         "enable_process_test": "Flag to store as true",
+#         "test_data_path": "provide path",
+#         "some_list": "a list of floats",
+#     }
 
 
 # Declaration of the umbrella config object
 class ProjectConfig(BaseModel):
-    """Main project configuration for <myproject>."""
+    """Main project configuration for mscthesis."""
 
     meta: MetaConfig = MetaConfig()
     behavior: BehaviorConfig = BehaviorConfig()
-    some_command: SomeCommandConfig = SomeCommandConfig()
+    # some_command: SomeCommandConfig = SomeCommandConfig()
 
     # helper function for filtering after model_config.json_schema_extra.expose
     def _filter_config_for_exposure(self) -> dict[str, Any]:

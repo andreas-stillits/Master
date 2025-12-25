@@ -55,7 +55,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         "set",
         description="Set a specific configuration attribute via a dot-formatted key.",
         help="Set a specific configuration attribute via a dot-formatted key.",
-        epilog="Example: <myproject> config set behavior.log_level WARNING \n",
+        epilog="Example: msc config set behavior.log_level WARNING \n",
     )
     parser.add_argument(
         "key",

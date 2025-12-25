@@ -96,18 +96,3 @@ class ScanPaths(BaseModel):
 #         cases=["case1", "case2", "case3"],
 #         choices=["X", "Y", "Z"],
 #     )
-
-
-"""
-scan_paths = ScanConfig(
-    storage_root=config.behavior.storage_root,
-    scan_name="temporal_scanning",
-    cases=["caseA", "caseB", "caseC", "caseD", "caseE"],
-    choices=["Ca", "K", "gs"],
-).make_tree()
-
-scan_paths.ensure("caseA", "Ca", subdirs=["results", "logs"])
-
-
-
-"""

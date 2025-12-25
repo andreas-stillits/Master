@@ -35,7 +35,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         "get",
         description="Get a specific configuration attribute via a dot-formatted key.",
         help="Get a specific configuration attribute via a dot-formatted key.",
-        epilog="Example: <myproject> config -u get behavior.log_level \n",
+        epilog="Example: msc config -u get behavior.log_level \n",
     )
     parser.add_argument(
         "key",
