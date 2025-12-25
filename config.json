@@ -1,0 +1,18 @@
+{
+  "behavior": {
+    "storage_root": "/home/andreasstillits/coding/ResearchProjectTemplate/storage",
+    "quiet": false,
+    "no_log": false,
+    "log_level": "INFO",
+    "log_filename": "run.log"
+  },
+  "some_command": {
+    "enable_process_test": false,
+    "test_data_path": "/home/andreasstillits/.myproject/test_data",
+    "some_list": [
+      0.1,
+      0.2,
+      0.3
+    ]
+  }
+}
