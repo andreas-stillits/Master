@@ -1,1 +1,1 @@
-Document your project here
+Document the Master Thesis here

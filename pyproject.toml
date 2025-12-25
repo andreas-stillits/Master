@@ -3,11 +3,11 @@ requires = ["hatchling>=1.26"]
 build-backend = "hatchling.build"
 
 [project]
-name = "myproject"
+name = "mscthesis"
 version = "0.1.0"
-description = "A template for centralized research projects"
+description = "Codebase for the Master Thesis of Andreas Stillits concerning the modeling of 3D photoactive tissues in C3 Leaves"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = {file = "LICENSE"}
 authors = [{name = "Andreas Stillits", email = "andreas.stillits@gmail.com"}]
 dependencies = ["argcomplete>=3.6.3", "pydantic>=2.12.4"]
@@ -15,12 +15,12 @@ dependencies = ["argcomplete>=3.6.3", "pydantic>=2.12.4"]
 
 [project.scripts]
 # quick access terminal cmds for often used functionality, e.g.
-myproject = "myproject.cli.main:main"
+msc = "mscthesis.cli.main:main"
 # pkgname-cmd = "pkgname.scripts.filename:main"
 
 [tool.hatch.build.targets.wheel]
 # optionally one can have different "wheels", e.g. CPU version and a GPU version
-packages = ["src/myproject"]
+packages = ["src/mscthesis"]
 
 [project.optional-dependencies]
 # optional developmental tools for quick maintainence
@@ -47,4 +47,4 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["myproject"]
+known-first-party = ["mscthesis"]
