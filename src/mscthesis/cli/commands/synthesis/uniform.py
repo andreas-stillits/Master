@@ -11,6 +11,15 @@ from ...shared import derive_cli_flags_from_config
 
 def _cmd(args: argparse.Namespace) -> None:
     """Command to copy the current settings to a specified file in JSON format."""
+
+    # validate sample ID length
+    required_chars = args.config.behavior.num_sample_id_chars
+    if not len(args.sample_id) == required_chars:
+        raise ValueError(
+            f"Sample ID '{args.sample_id}' does not match required "
+            f"length of {required_chars} characters."
+        )
+
     # get resolved config
     config: UniformSynthesisConfig = args.config.synthesize_uniform
 
