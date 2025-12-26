@@ -13,11 +13,11 @@ def _cmd(args: argparse.Namespace) -> None:
     """Command to copy the current settings to a specified file in JSON format."""
 
     # validate sample ID length
-    required_chars = args.config.behavior.num_sample_id_chars
-    if not len(args.sample_id) == required_chars:
+    required_digits = args.config.behavior.sample_id_digits
+    if not len(args.sample_id) == required_digits:
         raise ValueError(
             f"Sample ID '{args.sample_id}' does not match required "
-            f"length of {required_chars} characters."
+            f"length of {required_digits} characters."
         )
 
     # get resolved config
