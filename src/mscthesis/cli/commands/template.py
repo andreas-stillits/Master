@@ -1,5 +1,3 @@
-"""Template for a cli command"""
-
 from __future__ import annotations
 
 import argparse

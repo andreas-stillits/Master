@@ -157,7 +157,7 @@ def setup_logging(
     # file handler
     if not no_log:
         log_filename.parent.mkdir(parents=True, exist_ok=True)
-        sep_count = 60
+        sep_count = 80
         # get command line, but omit full path for the first argument (the binary)
         command = " ".join([Path(sys.argv[0]).name] + sys.argv[1:])
         header_lines = [
