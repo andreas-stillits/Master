@@ -35,7 +35,9 @@ def _summarize_value(value: Any, max_length: int = meta.log_summary_max_length) 
     return text
 
 
-def _summarize_args(func: Callable[..., Any], *args: Any, **kwargs: Any) -> dict[str, str]:
+def _summarize_args(
+    func: Callable[..., Any], *args: Any, **kwargs: Any
+) -> dict[str, str]:
     """Describe the arguments passed to a function as strings"""
     # get the signature obj of the function
     sig = inspect.signature(func)
@@ -135,11 +137,13 @@ def setup_logging(
     """
     import builtins
 
-    level = builtins.getattr(logging, log_level)  # translate LogLevel enum to logging.LEVEL int
+    level = builtins.getattr(
+        logging, log_level
+    )  # translate LogLevel enum to logging.LEVEL int
     func_key = meta.log_call_func_key
     details_key = meta.log_call_details_key
     #
-    fmt = f"%(asctime)-8s | %(levelname)-8s | %({func_key})-16s | %(message)-8s | %({details_key})s"
+    fmt = f"%(asctime)-8s | %(levelname)-8s | %({func_key})-40s | %({details_key})s"
     #
     datefmt = "%H:%M:%S"
     datefmt_full = "%Y-%m-%d %H:%M:%S"

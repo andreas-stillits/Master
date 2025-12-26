@@ -44,6 +44,7 @@ def derive_cli_flags_from_config(
 ) -> argparse.ArgumentParser:
     # init defaults and derive dictionary form for cli overrides
     defaults = ProjectConfig()
+    configname = configname.replace("-", "_")  # normalize possible dash usage
 
     if hasattr(defaults, configname):
         cmdconfig = getattr(defaults, configname)
@@ -55,7 +56,9 @@ def derive_cli_flags_from_config(
         for key, value in cli_overrides.items():  # passes if empty {}
             flag = "--" + key.replace("_", "-")
             if isinstance(value, bool):  # contract to defines bools as store_true flags
-                parser.add_argument(flag, action="store_true", help=cli_hints.get(key, ""))
+                parser.add_argument(
+                    flag, action="store_true", help=cli_hints.get(key, "")
+                )
             else:
                 # pick sensible type for argparse where possible
                 if isinstance(value, Path):
@@ -69,13 +72,19 @@ def derive_cli_flags_from_config(
                 elif isinstance(value, str):
                     argtype = str
                 else:
-                    argtype = parse_string_value  # try to interpret complex types from string
-                parser.add_argument(flag, type=argtype, default=value, help=cli_hints.get(key, ""))
+                    argtype = (
+                        parse_string_value  # try to interpret complex types from string
+                    )
+                parser.add_argument(
+                    flag, type=argtype, default=value, help=cli_hints.get(key, "")
+                )
 
     return parser
 
 
-def assemble_cli_overrides(args: argparse.Namespace, defaults: ProjectConfig) -> dict[str, Any]:
+def assemble_cli_overrides(
+    args: argparse.Namespace, defaults: ProjectConfig
+) -> dict[str, Any]:
     """Assemble CLI overrides from the given argparse.Namespace object."""
     defaults_dict = defaults.model_dump()
     keys = defaults_dict.keys()

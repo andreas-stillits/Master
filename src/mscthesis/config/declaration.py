@@ -40,7 +40,7 @@ class MetaConfig(BaseModel):
     user_config_path: Path = Path.home() / f".{project_name}" / "config.json"
     project_config_path: Path = Path.cwd() / "config.json"
     # magic strings and numbers -- underscores are to avoid name collision with internal logging fields
-    log_summary_max_length: int = 16
+    log_summary_max_length: int = 8
     log_call_start_msg: str = "_entry"
     log_call_end_msg: str = "_exit"
     log_call_error_msg: str = "_error"
@@ -79,23 +79,34 @@ class BehaviorConfig(BaseModel):
     }
 
 
-# some example config relating to a specific command
-# class SomeCommandConfig(BaseModel):
-#     """Configuration for process testing"""
+class UniformSynthesisConfig(BaseModel):
+    """Configuration for uniform swiss cheese voxel model synthesis"""
 
-#     model_config = ConfigDict(
-#         extra="forbid", json_schema_extra={"expose": True, "commands": ["test"]}
-#     )
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"expose": True, "commands": ["synthesize-uniform"]},
+    )
 
-#     enable_process_test: bool = False
-#     test_data_path: Path = Path.home() / f".{MetaConfig().project_name}" / "test_data"
-#     some_list: list[float] = [0.1, 0.2, 0.3]
+    base_seed: int = 123456
+    resolution: int = 64
+    plug_aspect: float = 0.10
+    num_cells: int = 100
+    min_radius: float = 0.05
+    max_radius: float = 0.15
+    min_separation: float = 0.01
+    max_attempts: int = 1000
+    storage_foldername: str = "synthesis"
 
-#     cli_hints: ClassVar[dict[str, str]] = {
-#         "enable_process_test": "Flag to store as true",
-#         "test_data_path": "provide path",
-#         "some_list": "a list of floats",
-#     }
+    cli_hints: ClassVar[dict[str, str]] = {
+        "base_seed": "Base seed for random number generation",
+        "resolution": "Number of voxels along each axis",
+        "plug_aspect": "Ratio of plug radius to plug thickness/height",
+        "num_cells": "Number of cells (spheres) to place in the model",
+        "min_radius": "Minimum radius of the cells",
+        "max_radius": "Maximum radius of the cells",
+        "min_separation": "Minimum separation distance between cells",
+        "max_attempts": "Maximum attempts to place each cell without overlap",
+    }
 
 
 # Declaration of the umbrella config object
@@ -104,7 +115,7 @@ class ProjectConfig(BaseModel):
 
     meta: MetaConfig = MetaConfig()
     behavior: BehaviorConfig = BehaviorConfig()
-    # some_command: SomeCommandConfig = SomeCommandConfig()
+    synthesize_uniform: UniformSynthesisConfig = UniformSynthesisConfig()
 
     # helper function for filtering after model_config.json_schema_extra.expose
     def _filter_config_for_exposure(self) -> dict[str, Any]:

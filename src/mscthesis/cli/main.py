@@ -11,6 +11,7 @@ from .commands.config import get as config_get
 from .commands.config import init as config_init
 from .commands.config import set as config_set
 from .commands.config import show as config_show
+from .commands.synthesis import uniform as synthesize_uniform
 from .shared import (
     assemble_cli_overrides,
     derive_cli_flags_from_config,
@@ -61,6 +62,7 @@ def _build_parser() -> argparse.ArgumentParser:
     # ... add more commands here that act as subcommands of "config ..."
     # ...
     # === OTHER COMMANDS ===
+    synthesize_uniform.add_parser(subparsers)
 
     # ... add more top-level commands here ...
     # either:
