@@ -129,7 +129,8 @@ def main(argv: list[str] | None = None) -> int:
             duration = time.perf_counter() - start_time
 
             # log total command execution time
-            exit_program_log(logger, duration)
+            if not args.config.behavior.no_log:
+                exit_program_log(logger, duration)
         else:
             print(f"Unrecognized command: {argv}")
             parser.print_help()  # print top level help if not a valid command

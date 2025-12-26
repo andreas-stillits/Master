@@ -25,8 +25,8 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     """Register the 'config copy <path>' command on the given subparsers object."""
     parser = subparsers.add_parser(
         "copy",
-        description="Copy current user config in JSON format.",
-        help="Copy the current user config in JSON format.",
+        description="Copy current resolved config in JSON format.",
+        help="Copy the current resolved config in JSON format.",
         epilog="Example: msc config copy ./config_backup.json",
     )
     parser.add_argument(
