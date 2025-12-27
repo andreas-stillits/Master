@@ -21,7 +21,7 @@ def _cmd(args: argparse.Namespace) -> None:
     # visualize based on file extension
     if file_path.suffix == ".npy":
         voxels = load_voxels_from_npy(file_path)
-        visualize_voxels(voxels, material_id=0)
+        visualize_voxels(voxels, material_id=1)
 
     else:
         raise ValueError(

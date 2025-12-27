@@ -6,6 +6,28 @@ from ...utilities.log import log_call
 from .helpers import get_sample_seed
 
 
+def _initialize_meshgrid(
+    plug_aspect: float,
+    planar_resolution: int,
+    axial_resolution: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Initialize a 3D meshgrid for voxel generation.
+
+    Args:
+        planar_resolution (int): Number of voxels along the x and y axes.
+        axial_resolution (int): Number of voxels along the z axis.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray, np.ndarray]: Meshgrid arrays for X, Y, Z coordinates.
+    """
+    x = np.linspace(-plug_aspect, plug_aspect, planar_resolution)
+    y = np.linspace(-plug_aspect, plug_aspect, planar_resolution)
+    z = np.linspace(0, 1, axial_resolution)
+    X, Y, Z = np.meshgrid(x, y, z, indexing="ij")
+    return X, Y, Z
+
+
 @log_call()
 def generate_uniform_swiss_voxels(
     sample_id: str,
@@ -45,10 +67,7 @@ def generate_uniform_swiss_voxels(
     planar_resolution = int(2 * plug_aspect * resolution)
 
     # create meshgrid and empty voxels
-    x = np.linspace(-plug_aspect, plug_aspect, planar_resolution)
-    y = np.linspace(-plug_aspect, plug_aspect, planar_resolution)
-    z = np.linspace(0, 1, resolution)
-    X, Y, Z = np.meshgrid(x, y, z, indexing="ij")
+    X, Y, Z = _initialize_meshgrid(plug_aspect, planar_resolution, resolution)
     voxels = np.zeros(
         (planar_resolution, planar_resolution, resolution), dtype=np.uint8
     )
@@ -88,6 +107,7 @@ def generate_uniform_swiss_voxels(
                 centers.append(center)
                 radii.append(radius)
                 break
+            attempts += 1
 
         else:  # executed only if while loop is not stopped by break - then we dont attempt to place any further spheres
             break  # break out of the for loop
@@ -96,8 +116,8 @@ def generate_uniform_swiss_voxels(
         distance = np.sqrt(
             (X - center[0]) ** 2 + (Y - center[1]) ** 2 + (Z - center[2]) ** 2
         )
-        voxels |= (distance <= radius).astype(
-            np.uint8
-        )  # 1 where sphere is present, and 1 if already assigned 1 (OR)
+        # mask = distance <= radius
+        # voxels[mask] = np.uint8(1)
+        voxels |= (distance <= radius).astype(np.uint8)
 
     return voxels
