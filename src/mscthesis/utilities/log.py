@@ -9,6 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, TypeVar, cast
 
+import numpy as np
+
 from ..config.declaration import LogLevel, ProjectConfig
 
 # we use this "placeholder type" to make sure that typechecking can still resolve
@@ -25,7 +27,15 @@ def _summarize_value(value: Any, max_length: int = meta.log_summary_max_length) 
     """Crude but practical value summarizer that acts as a Any -> str filter"""
     try:
         # render value in its string representation
-        text = repr(value)
+        if isinstance(value, (int, float, bool)):
+            text = str(value)
+        elif isinstance(value, Path):
+            # show as str but only last to parts of the path
+            text = "..." + "/".join(value.parts[-2:])
+        elif isinstance(value, np.ndarray):
+            text = f"arr {value.shape} {value.dtype}"
+        else:
+            text = repr(value)
     except Exception:
         # substitute information about unreprability if applicable
         text = f"<unreprable {type(value).__name__}>"
@@ -59,14 +69,14 @@ def log_call(
     """Decorator function to achieve logging at a certain log.level
 
     Args:
-        - level (int): the logging.LEVEL to execute at (default is INFO)
+        level (int): the logging.LEVEL to execute at (default is INFO)
                        will short-circuit if the global loglevel is set higher
-        - include_result (bool): whether or not to represent the function output
+        include_result (bool): whether or not to represent the function output
     """
 
     def decorator(func: GhostType) -> GhostType:
         # format an informative name, e.g. core.io
-        qualname = f"{func.__module__.split('.')[-1]}.{func.__qualname__}"
+        qualname = f".{func.__qualname__}"
         logger = logging.getLogger(func.__module__)  # get a per-target-module logger
 
         # wrapper itself
@@ -114,7 +124,7 @@ def log_call(
                 meta.log_call_end_msg,
                 extra={
                     meta.log_call_func_key: qualname,
-                    meta.log_call_details_key: f"results = {_summarize_value(result) if include_result else '-'}, \t\t\t\t duration = {duration:.3f} s",
+                    meta.log_call_details_key: f"duration = {duration:.3f} s, \t\t results = {_summarize_value(result) if include_result else '-'}",
                 },
             )
             return result
@@ -143,7 +153,7 @@ def setup_logging(
     func_key = meta.log_call_func_key
     details_key = meta.log_call_details_key
     #
-    fmt = f"%(asctime)-8s | %(levelname)-8s | %({func_key})-40s | %({details_key})s"
+    fmt = f"%(asctime)-8s | %(levelname)-8s | %({func_key})-32s | %({details_key})s"
     #
     datefmt = "%H:%M:%S"
     datefmt_full = "%Y-%m-%d %H:%M:%S"
@@ -193,7 +203,7 @@ def exit_program_log(logger: logging.Logger, duration: float) -> None:
     logger.info(
         "program_exit",
         extra={
-            meta.log_call_func_key: "cli.main",
-            meta.log_call_details_key: f"\t\t\t\t   Total program duration = {duration:.3f} s",
+            meta.log_call_func_key: ".cli.main",
+            meta.log_call_details_key: f"duration = {duration:.3f} s  in total",
         },
     )

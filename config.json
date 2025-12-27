@@ -10,10 +10,10 @@
   "synthesize_uniform": {
     "base_seed": 123456,
     "resolution": 64,
-    "plug_aspect": 0.5,
-    "num_cells": 10,
-    "min_radius": 0.10,
-    "max_radius": 0.15,
+    "plug_aspect": 0.3,
+    "num_cells": 50,
+    "min_radius": 0.02,
+    "max_radius": 0.05,
     "min_separation": 0.01,
     "max_attempts": 1000,
     "storage_foldername": "synthesis"

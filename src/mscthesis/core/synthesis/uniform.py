@@ -116,8 +116,8 @@ def generate_uniform_swiss_voxels(
         distance = np.sqrt(
             (X - center[0]) ** 2 + (Y - center[1]) ** 2 + (Z - center[2]) ** 2
         )
-        # mask = distance <= radius
-        # voxels[mask] = np.uint8(1)
-        voxels |= (distance <= radius).astype(np.uint8)
+        voxels |= (distance <= radius).astype(
+            np.uint8
+        )  # set tissue voxels to 1 within mask
 
     return voxels
