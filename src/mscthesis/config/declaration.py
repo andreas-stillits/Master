@@ -34,11 +34,14 @@ Each subclass should declare model_config
 class MetaConfig(BaseModel):
     """Meta configuration for naming and hardcoded paths"""
 
-    model_config = ConfigDict(extra="forbid", json_schema_extra={"expose": False})
+    model_config = ConfigDict(
+        extra="forbid", json_schema_extra={"expose": False, "commands": []}
+    )
 
     project_name: str = "mscthesis"
-    user_config_path: Path = Path.home() / f".{project_name}" / "config.json"
-    project_config_path: Path = Path.cwd() / "config.json"
+    config_name: str = "config.json"
+    user_config_path: Path = Path.home() / f".{project_name}" / config_name
+    project_config_path: Path = Path.cwd() / config_name
     # magic strings and numbers -- underscores are to avoid name collision with internal logging fields
     log_summary_max_length: int = 32
     log_call_start_msg: str = "_entry"

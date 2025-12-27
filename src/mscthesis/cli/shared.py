@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import argparse
 import ast
+import json
 from pathlib import Path
 from typing import Any
 
 from ..config.declaration import LogLevel, ProjectConfig
-from ..config.helpers import deep_update
+from ..config.helpers import deep_update, filter_config_for_command
 
 
 def initialize_parsers(
@@ -120,3 +121,19 @@ def parse_string_value(raw: str) -> Any:
     except (ValueError, SyntaxError):
         value = raw
     return value
+
+
+def dump_resolved_command_config(
+    config: ProjectConfig, command: str, target_directory: Path
+) -> None:
+    """
+    Dump the resolved configuration for the given command to a file.
+    Args:
+        config (ProjectConfig): The resolved project configuration.
+        command (str): The command name whose relevant configuration to dump.
+        target_directory (Path): The directory where the configuration file will be saved.
+    """
+    command_config = filter_config_for_command(config, command)
+    target_path = target_directory / config.meta.config_name
+    target_path.write_text(json.dumps(command_config, indent=2, default=str))
+    return

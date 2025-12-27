@@ -7,7 +7,7 @@ from ....core.synthesis.helpers import save_voxel_model
 from ....core.synthesis.uniform import generate_uniform_swiss_voxels
 from ....utilities.checks import validate_sample_id
 from ....utilities.paths import create_target_directory
-from ...shared import derive_cli_flags_from_config
+from ...shared import derive_cli_flags_from_config, dump_resolved_command_config
 
 
 def _cmd(args: argparse.Namespace) -> None:
@@ -31,13 +31,15 @@ def _cmd(args: argparse.Namespace) -> None:
         config.max_attempts,
     )
 
-    target = create_target_directory(
+    target_directory = create_target_directory(
         args.config.behavior.storage_root,
         args.sample_id,
         config.storage_foldername,
     )
-    file_path = target / "voxels.npy"
+    file_path = target_directory / "voxels.npy"
     save_voxel_model(voxels, file_path)
+
+    dump_resolved_command_config(args.config, "synthesize-uniform", target_directory)
 
     return
 

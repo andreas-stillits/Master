@@ -60,7 +60,9 @@ def deep_update(base: dict[str, Any], updates: dict[str, Any]) -> dict[str, Any]
     return result
 
 
-def build_project_config(path: Path, overrides: dict[str, Any] | None = None) -> ProjectConfig:
+def build_project_config(
+    path: Path, overrides: dict[str, Any] | None = None
+) -> ProjectConfig:
     """Build the project configuration from defaults and file overrides.
     Can be called through API with a path pointing to a config.json file
     """
