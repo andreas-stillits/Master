@@ -5,20 +5,16 @@ import argparse
 from ....config.declaration import UniformSynthesisConfig
 from ....core.synthesis.helpers import save_voxel_model
 from ....core.synthesis.uniform import generate_uniform_swiss_voxels
-from ....utilities.paths import get_samples_path
+from ....utilities.checks import validate_sample_id
+from ....utilities.paths import create_target_directory
 from ...shared import derive_cli_flags_from_config
 
 
 def _cmd(args: argparse.Namespace) -> None:
-    """Command to copy the current settings to a specified file in JSON format."""
+    """Command to generate a uniform swiss cheese voxel model"""
 
-    # validate sample ID length
-    required_digits = args.config.behavior.sample_id_digits
-    if not len(args.sample_id) == required_digits:
-        raise ValueError(
-            f"Sample ID '{args.sample_id}' does not match required "
-            f"length of {required_digits} characters."
-        )
+    # validate sample ID
+    validate_sample_id(args.sample_id, args.config.behavior.sample_id_digits)
 
     # get resolved config
     config: UniformSynthesisConfig = args.config.synthesize_uniform
@@ -35,14 +31,13 @@ def _cmd(args: argparse.Namespace) -> None:
         config.max_attempts,
     )
 
-    samples_path = get_samples_path(args.config.behavior.storage_root)
-
-    # create target: <storage_root>/<samples>/<sample_id>/synthesis/...
-    target_dir = samples_path / args.sample_id / config.storage_foldername
-    target_dir.mkdir(parents=True, exist_ok=True)
-    filename = target_dir / "voxels.npy"
-
-    save_voxel_model(voxels, filename)
+    target = create_target_directory(
+        args.config.behavior.storage_root,
+        args.sample_id,
+        config.storage_foldername,
+    )
+    file_path = target / "voxels.npy"
+    save_voxel_model(voxels, file_path)
 
     return
 

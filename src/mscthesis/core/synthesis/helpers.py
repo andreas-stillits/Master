@@ -24,7 +24,7 @@ def get_sample_seed(base_seed: int, sample_id: str) -> int:
 
 @log_call()
 def save_voxel_model(
-    voxels: np.ndarray[tuple[int, int, int], np.dtype[np.uint8]], filename: str | Path
+    voxels: np.ndarray[tuple[int, int, int], np.dtype[np.uint8]], file_path: str | Path
 ) -> None:
     """
     Save a voxel model to a binary .npy file.
@@ -33,4 +33,4 @@ def save_voxel_model(
         voxels (np.ndarray): 3D numpy array representing the voxel model.
         filename (str | Path): The output filename for the .npy file.
     """
-    np.save(filename, voxels)
+    np.save(file_path, voxels)

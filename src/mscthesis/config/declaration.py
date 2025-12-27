@@ -40,7 +40,7 @@ class MetaConfig(BaseModel):
     user_config_path: Path = Path.home() / f".{project_name}" / "config.json"
     project_config_path: Path = Path.cwd() / "config.json"
     # magic strings and numbers -- underscores are to avoid name collision with internal logging fields
-    log_summary_max_length: int = 8
+    log_summary_max_length: int = 16
     log_call_start_msg: str = "_entry"
     log_call_end_msg: str = "_exit"
     log_call_error_msg: str = "_error"
