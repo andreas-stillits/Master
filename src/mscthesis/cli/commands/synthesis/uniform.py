@@ -6,12 +6,13 @@ from pathlib import Path
 from ....config.declaration import UniformSynthesisConfig
 from ....core.synthesis.helpers import save_voxel_model
 from ....core.synthesis.uniform import generate_uniform_swiss_voxels
-from ....utilities.checks import validate_sample_id
+from ....utilities.checks import validate_sample_id, verify_existence, verify_extension
 from ....utilities.manifest import dump_manifest
 from ....utilities.paths import create_target_directory
 from ...shared import derive_cli_flags_from_config, dump_resolved_command_config
 
 CMD_NAME = "synthesize-uniform"
+DEFAULT_FILENAME = "voxels.npy"
 
 
 def _cmd(args: argparse.Namespace) -> None:
@@ -47,9 +48,12 @@ def _cmd(args: argparse.Namespace) -> None:
         if args.output_dir is None
         else Path(args.output_dir)
     )
-    filename = "voxels.npy" if args.filename is None else args.filename
-    file_path = target_directory / filename
+    verify_existence(target_directory)
 
+    filename = DEFAULT_FILENAME if args.filename is None else args.filename
+    verify_extension(filename, ".npy")
+
+    file_path = target_directory / filename
     save_voxel_model(voxels, file_path)
 
     # optionally dump resolved command-relevant config
@@ -98,7 +102,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         "--filename",
         "-f",
         type=str,
-        help="Optional filename for the voxel model (defaults to 'voxels.npy')",
+        help=f"Optional filename for the voxel model (defaults to '{DEFAULT_FILENAME}')",
     )
     parser = derive_cli_flags_from_config(parser, CMD_NAME)
     parser.set_defaults(cmd=_cmd)
