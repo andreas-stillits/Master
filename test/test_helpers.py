@@ -1,7 +1,7 @@
 import copy
 from pathlib import Path
 
-from myproject.config.helpers import deep_update
+from mscthesis.config.helpers import deep_update
 
 
 def test_deep_update_basic_merge():

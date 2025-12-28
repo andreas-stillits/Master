@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from myproject.config.declaration import ProjectConfig
+from mscthesis.config.declaration import ProjectConfig
 
 
 def test_project_config_contract():

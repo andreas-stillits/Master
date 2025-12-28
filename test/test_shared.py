@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from myproject.cli import shared
+from mscthesis.cli import shared
 
 
 class FakeCmdConfig:
