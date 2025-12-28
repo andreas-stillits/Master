@@ -69,6 +69,7 @@ class BehaviorConfig(BaseModel):
 
     storage_root: Path = Path.home() / "coding/master/.treasury"
     sample_id_digits: int = 5
+    no_config_dump: bool = False
     quiet: bool = False
     no_log: bool = False
     log_level: LogLevel = LogLevel.INFO

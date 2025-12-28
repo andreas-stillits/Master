@@ -39,7 +39,10 @@ def _cmd(args: argparse.Namespace) -> None:
     file_path = target_directory / "voxels.npy"
     save_voxel_model(voxels, file_path)
 
-    dump_resolved_command_config(args.config, "synthesize-uniform", target_directory)
+    if not args.config.behavior.no_config_dump:
+        dump_resolved_command_config(
+            args.config, "synthesize-uniform", target_directory
+        )
 
     return
 
