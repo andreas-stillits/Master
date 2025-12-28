@@ -61,7 +61,23 @@ def _build_parser() -> argparse.ArgumentParser:
     config_get.add_parser(config_subparsers)
     config_set.add_parser(config_subparsers)
     # ... add more commands here that act as subcommands of "config ..."
+    # =========================
+
+    # === MPIBATCH COMMANDS ===
+    mpibatch_parser = subparsers.add_parser(
+        "mpibatch",
+        help="Commands related to MPI batch job submission and management.",
+    )
+    mpibatch_subparsers = mpibatch_parser.add_subparsers(
+        title="mpibatch_commands",
+        dest="mpibatch_command",  # store chosen mpibatch command in args.mpibatch_command
+    )
+    mpibatch_subparsers.required = True
+    # wire in possible mpibatch <subcommand>
     # ...
+
+    # ======================
+
     # === OTHER COMMANDS ===
     synthesize_uniform.add_parser(subparsers)
     visualize.add_parser(subparsers)
@@ -118,6 +134,12 @@ def main(argv: list[str] | None = None) -> int:
         # overriding args.config to mean the resolved ProjectConfig instance
         args.config = config  # pass resolved config to args for commands to use
         b = config.behavior
+
+        # force quiet mode if command is mpibatch subcommand (suppress logs on workers)
+        if hasattr(args, "mpibatch_command"):
+            b.quiet = True
+            b.no_log = True
+
         logger = setup_logging(
             b.storage_root / b.log_filename, b.log_level, b.quiet, b.no_log
         )
@@ -133,8 +155,9 @@ def main(argv: list[str] | None = None) -> int:
             duration = time.perf_counter() - start_time
 
             # log total command execution time
-            if not args.config.behavior.no_log:
+            if not b.no_log:
                 exit_program_log(logger, duration)
+
         else:
             print(f"Unrecognized command: {argv}")
             parser.print_help()  # print top level help if not a valid command

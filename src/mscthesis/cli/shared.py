@@ -207,8 +207,8 @@ def determine_target_and_file_path(
             args.sample_id,
             cmdconfig.storage_foldername,  # type: ignore
         )
-        if args.output_dir is None
-        else Path(args.output_dir)
+        if args.target_dir is None
+        else Path(args.target_dir)
     )
 
     verify_existence(target_directory)
