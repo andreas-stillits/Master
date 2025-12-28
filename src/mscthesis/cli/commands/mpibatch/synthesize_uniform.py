@@ -2,22 +2,19 @@ from __future__ import annotations
 
 import argparse
 import time
-from pathlib import Path
 
 from mpi4py import MPI
-
-from mscthesis.utilities.manifest import dump_manifest
 
 from ....config.declaration import UniformSynthesisConfig
 from ....core.synthesis.helpers import save_voxel_model
 from ....core.synthesis.uniform import generate_uniform_swiss_voxels
 from ....utilities.checks import validate_sample_id
-from ....utilities.paths import create_target_directory
 from ...shared import (
     add_filename_argument,
     add_target_directory_argument,
     derive_cli_flags_from_config,
-    dump_resolved_command_config,
+    determine_target_directory,
+    document_command_execution,
 )
 
 CMD_NAME = "synthesize-uniform"
@@ -64,36 +61,28 @@ def _cmd(args: argparse.Namespace) -> None:
         )
 
         # save voxel model to disk
-        target_directory = (
-            create_target_directory(
-                args.config.behavior.storage_root,
-                sample_id,
-                cmdconfig.storage_foldername,  # type: ignore
-            )
-            if args.target_dir is None
-            else Path(args.target_dir) / sample_id
+        target_directory = determine_target_directory(
+            args.config,
+            CMD_NAME,
+            sample_id,
+            args.target_dir,
         )
-        target_directory.mkdir(parents=True, exist_ok=True)
 
         filename = DEFAULT_FILENAME if args.filename is None else args.filename
         file_path = target_directory / filename
 
         save_voxel_model(voxels, file_path)
 
-        if not args.config.behavior.no_cmdconfig:
-            dump_resolved_command_config(args.config, CMD_NAME, target_directory)
-
-        if not args.config.behavior.no_manifest:
-            dump_manifest(
-                target_directory,
-                CMD_NAME,
-                sample_id,
-                inputs={},
-                outputs={"voxel_model": str(file_path.expanduser().resolve())},
-                metadata={},
-                status="success",
-                tool_version=args.config.meta.project_version,
-            )
+        document_command_execution(
+            args.config,
+            target_directory,
+            CMD_NAME,
+            sample_id,
+            inputs={},
+            outputs={"voxel_model": str(file_path.expanduser().resolve())},
+            metadata={},
+            status="success",
+        )
 
     if rank == 0:
         end = time.perf_counter()

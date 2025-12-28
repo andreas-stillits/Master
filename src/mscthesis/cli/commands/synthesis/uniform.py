@@ -10,7 +10,7 @@ from ...shared import (
     add_filename_argument,
     add_target_directory_argument,
     derive_cli_flags_from_config,
-    determine_target_and_file_path,
+    determine_target_directory,
     document_command_execution,
 )
 
@@ -41,18 +41,22 @@ def _cmd(args: argparse.Namespace) -> None:
     )
 
     # save voxel model to disk
-    target_directory, file_path = determine_target_and_file_path(
-        args,
-        cmdconfig,
-        DEFAULT_FILENAME,
-        ".npy",
+    target_directory = determine_target_directory(
+        args.config,
+        CMD_NAME,
+        args.sample_id,
+        args.target_dir,
     )
+    filename = DEFAULT_FILENAME if args.filename is None else args.filename
+    file_path = target_directory / filename
+
     save_voxel_model(voxels, file_path)
 
     document_command_execution(
-        args,
+        args.config,
         target_directory,
         CMD_NAME,
+        args.sample_id,
         inputs={},
         outputs={"voxel_model": str(file_path.expanduser().resolve())},
         metadata={},

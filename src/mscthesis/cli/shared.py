@@ -4,13 +4,11 @@ import argparse
 import ast
 import json
 from pathlib import Path
-from typing import Any
-
-from pydantic import BaseModel
+from typing import Any, Optional
 
 from ..config.declaration import LogLevel, ProjectConfig
 from ..config.helpers import deep_update, filter_config_for_command
-from ..utilities.checks import verify_existence, verify_extension
+from ..utilities.checks import verify_existence
 from ..utilities.manifest import dump_manifest
 from ..utilities.paths import create_target_directory
 
@@ -179,12 +177,12 @@ def dump_resolved_command_config(
     return
 
 
-def determine_target_and_file_path(
-    args: argparse.Namespace,
-    cmdconfig: BaseModel,
-    default_filename: str,
-    *allowed_extensions: str,
-) -> tuple[Path, Path]:
+def determine_target_directory(
+    config: ProjectConfig,
+    command_name: str,
+    sample_id: str,
+    target_dir: Optional[str] = None,
+) -> Path:
     """
     Determine the target directory and file path based on CLI arguments and command configuration.
     Args:
@@ -196,6 +194,11 @@ def determine_target_and_file_path(
     Note:
         cmdconfig must expose 'storage_foldername'
     """
+    command_name = command_name.replace("-", "_")  # normalize possible dash usage
+    # validate command exists in ProjectConfig
+    if not hasattr(config, command_name):
+        raise ValueError(f"ProjectConfig has no attribute '{command_name}'")
+    cmdconfig = getattr(config, command_name)
     # validate cmdconfig has required attribute
     if not hasattr(cmdconfig, "storage_foldername"):
         raise ValueError("cmdconfig must have a 'storage_foldername' attribute")
@@ -203,29 +206,24 @@ def determine_target_and_file_path(
     # determine target directory
     target_directory = (
         create_target_directory(
-            args.config.behavior.storage_root,
-            args.sample_id,
+            config.behavior.storage_root,
+            sample_id,
             cmdconfig.storage_foldername,  # type: ignore
         )
-        if args.target_dir is None
-        else Path(args.target_dir)
+        if target_dir is None
+        else Path(target_dir)
     )
 
     verify_existence(target_directory)
 
-    # determine file path
-    filename = default_filename if args.filename is None else args.filename
-    verify_extension(filename, *allowed_extensions)
-
-    file_path = target_directory / filename
-
-    return target_directory, file_path
+    return target_directory
 
 
 def document_command_execution(
-    args: argparse.Namespace,
+    config: ProjectConfig,
     target_directory: Path,
     command_name: str,
+    sample_id: str,
     inputs: dict[str, str],
     outputs: dict[str, str],
     metadata: dict[str, Any],
@@ -243,19 +241,19 @@ def document_command_execution(
         status (str): The status of the execution (e.g., "success", "failure").
     """
     # optionally dump resolved command-relevant config
-    if not args.config.behavior.no_cmdconfig:
-        dump_resolved_command_config(args.config, command_name, target_directory)
+    if not config.behavior.no_cmdconfig:
+        dump_resolved_command_config(config, command_name, target_directory)
 
     # optionally dump manifest
-    if not args.config.behavior.no_manifest:
+    if not config.behavior.no_manifest:
         dump_manifest(
             target_directory,
             command_name,
-            args.sample_id,
+            sample_id,
             inputs,
             outputs,
             metadata,
             status,
-            args.config.meta.project_version,
+            config.meta.project_version,
         )
     return
