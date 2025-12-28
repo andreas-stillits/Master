@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
 from ....config.declaration import ProjectConfig
-from ....utilities.checks import validate_sample_id, verify_existence, verify_extension
-from ....utilities.manifest import dump_manifest
-from ....utilities.paths import create_target_directory
-from ...shared import derive_cli_flags_from_config, dump_resolved_command_config
+from ....utilities.checks import validate_sample_id
+from ...shared import (
+    derive_cli_flags_from_config,
+    determine_target_and_file_path,
+    document_command_execution,
+)
 
 CMD_NAME = "<...>"
 DEFAULT_FILENAME = "<...>"
@@ -21,6 +22,7 @@ def _cmd(args: argparse.Namespace) -> None:
 
     # get resolved config
     config: ProjectConfig = args.config
+    cmdconfig = config.<...> 
 
     # ====
 
@@ -29,44 +31,24 @@ def _cmd(args: argparse.Namespace) -> None:
 
     # ====
 
-    # save to disk
-    target_directory = (
-        create_target_directory(
-            args.config.behavior.storage_root,
-            args.sample_id,
-            config.storage_foldername,
-        )
-        if args.output_dir is None
-        else Path(args.output_dir)
+    # save voxel model to disk
+    target_directory, file_path = determine_target_and_file_path(
+        args,
+        cmdconfig,
+        DEFAULT_FILENAME,
+        ".<exts>",
     )
-    verify_existence(target_directory)
+    save(data, file_path)
 
-    filename = DEFAULT_FILENAME if args.filename is None else args.filename
-    verify_extension(filename, ".<ext>")
-
-    file_path = target_directory / filename
-    # save(data, file_path)
-
-    # optionally dump resolved command-relevant config
-    if not args.config.behavior.no_cmdconfig:
-        dump_resolved_command_config(args.config, CMD_NAME, target_directory)
-
-    # optionally dump manifest
-    if not args.config.behavior.no_manifest:
-        inputs: dict[str, str] = {}
-        outputs: dict[str, str] = {"data": str(file_path.expanduser().resolve())}
-        metadata: dict[str, str] = {}
-
-        dump_manifest(
-            target_directory,
-            CMD_NAME,
-            args.sample_id,
-            inputs,
-            outputs,
-            metadata,
-            "success",
-            args.config.meta.project_version,
-        )
+    document_command_execution(
+        args,
+        target_directory,
+        CMD_NAME,
+        inputs={},
+        outputs={"<description ...>": str(file_path.expanduser().resolve())},
+        metadata={},
+        status="success",
+    )
 
     return
 
