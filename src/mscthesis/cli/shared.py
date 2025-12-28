@@ -128,20 +128,31 @@ def parse_string_value(raw: str) -> Any:
     return value
 
 
-def add_io_arguments(parser: argparse.ArgumentParser, default_filename: str) -> None:
-    """Add common I/O arguments to the given parser.
+def add_target_directory_argument(parser: argparse.ArgumentParser) -> None:
+    """Add a common target directory argument to the given parser.
 
     Args:
-        parser (argparse.ArgumentParser): The argument parser to which I/O arguments will be added.
-        default_filename (str): The default filename to use if none is provided.
+        parser (argparse.ArgumentParser): The argument parser to which the target directory argument will be added.
     """
     parser.add_argument(
-        "-o",
-        "--output-dir",
+        "-t",
+        "--target-dir",
         type=str,
         default=None,
-        help="Directory where output files will be saved (overrides default storage location).",
+        help="Directory where output files will be saved (overrides config storage root location).",
     )
+    return
+
+
+def add_filename_argument(
+    parser: argparse.ArgumentParser, default_filename: str
+) -> None:
+    """Add a common filename argument to the given parser.
+
+    Args:
+        parser (argparse.ArgumentParser): The argument parser to which the filename argument will be added.
+        default_filename (str): The default filename to use if none is provided.
+    """
     parser.add_argument(
         "-f",
         "--filename",

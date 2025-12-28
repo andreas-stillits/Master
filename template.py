@@ -5,6 +5,8 @@ import argparse
 from ....config.declaration import ProjectConfig
 from ....utilities.checks import validate_sample_id
 from ...shared import (
+    add_target_directory_argument,
+    add_filename_argument,
     derive_cli_flags_from_config,
     determine_target_and_file_path,
     document_command_execution,
@@ -65,17 +67,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser.add_argument(
         "sample_id", type=str, help="Unique identifier for the generated sample"
     )
-    parser.add_argument(
-        "--output-dir",
-        "-o",
-        type=str,
-        help="Optional output directory (defaults to sample folder in storage root)",
-    )
-    parser.add_argument(
-        "--filename",
-        "-f",
-        type=str,
-        help=f"Optional filename for the voxel model (defaults to '{DEFAULT_FILENAME}')",
-    )
+    add_target_directory_argument(parser)
+    add_filename_argument(parser, DEFAULT_FILENAME)
     parser = derive_cli_flags_from_config(parser, CMD_NAME)
     parser.set_defaults(cmd=_cmd)

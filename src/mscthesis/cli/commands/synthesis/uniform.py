@@ -7,7 +7,8 @@ from ....core.synthesis.helpers import save_voxel_model
 from ....core.synthesis.uniform import generate_uniform_swiss_voxels
 from ....utilities.checks import validate_sample_id
 from ...shared import (
-    add_io_arguments,
+    add_filename_argument,
+    add_target_directory_argument,
     derive_cli_flags_from_config,
     determine_target_and_file_path,
     document_command_execution,
@@ -73,6 +74,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser.add_argument(
         "sample_id", type=str, help="Unique identifier for the generated sample"
     )
-    add_io_arguments(parser, DEFAULT_FILENAME)
+    add_target_directory_argument(parser)
+    add_filename_argument(parser, DEFAULT_FILENAME)
     parser = derive_cli_flags_from_config(parser, CMD_NAME)
     parser.set_defaults(cmd=_cmd)
