@@ -12,6 +12,7 @@ from .commands.config import get as config_get
 from .commands.config import init as config_init
 from .commands.config import set as config_set
 from .commands.config import show as config_show
+from .commands.mpibatch import synthesize_uniform as mpibatch_synthesize_uniform
 from .commands.synthesis import uniform as synthesize_uniform
 from .shared import (
     assemble_cli_overrides,
@@ -74,7 +75,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     mpibatch_subparsers.required = True
     # wire in possible mpibatch <subcommand>
-    # ...
+    mpibatch_synthesize_uniform.add_parser(mpibatch_subparsers)
 
     # ======================
 
