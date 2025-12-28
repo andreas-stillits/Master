@@ -39,6 +39,7 @@ class MetaConfig(BaseModel):
     )
 
     project_name: str = "mscthesis"
+    project_version: str = "0.1.0"
     config_name: str = "config.json"
     user_config_path: Path = Path.home() / f".{project_name}" / config_name
     project_config_path: Path = Path.cwd() / config_name
@@ -69,8 +70,9 @@ class BehaviorConfig(BaseModel):
 
     storage_root: Path = Path.home() / "coding/master/.treasury"
     sample_id_digits: int = 5
-    no_config_dump: bool = False
     quiet: bool = False
+    no_cmdconfig: bool = False
+    no_manifest: bool = False
     no_log: bool = False
     log_level: LogLevel = LogLevel.INFO
     log_filename: str = "run.log"
