@@ -34,7 +34,7 @@ def dump_manifest(
     """
     manifest_path = target_directory / "manifest.json"
     manifest: dict[str, Any] = {}
-    manifest["generation_time"] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    manifest["execution_time"] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     manifest["command"] = command_name
     manifest["sample_id"] = sample_id
     manifest["inputs"] = inputs

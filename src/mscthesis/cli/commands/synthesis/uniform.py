@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
 from ....config.declaration import UniformSynthesisConfig
 from ....core.synthesis.helpers import save_voxel_model
@@ -36,12 +37,19 @@ def _cmd(args: argparse.Namespace) -> None:
     )
 
     # save voxel model to disk
-    target_directory = create_target_directory(
-        args.config.behavior.storage_root,
-        args.sample_id,
-        config.storage_foldername,
+
+    target_directory = (
+        create_target_directory(
+            args.config.behavior.storage_root,
+            args.sample_id,
+            config.storage_foldername,
+        )
+        if args.output_dir is None
+        else Path(args.output_dir)
     )
-    file_path = target_directory / "voxels.npy"
+    filename = "voxels.npy" if args.filename is None else args.filename
+    file_path = target_directory / filename
+
     save_voxel_model(voxels, file_path)
 
     # optionally dump resolved command-relevant config
@@ -79,6 +87,18 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     )
     parser.add_argument(
         "sample_id", type=str, help="Unique identifier for the generated sample"
+    )
+    parser.add_argument(
+        "--output-dir",
+        "-o",
+        type=str,
+        help="Optional output directory (defaults to sample folder in storage root)",
+    )
+    parser.add_argument(
+        "--filename",
+        "-f",
+        type=str,
+        help="Optional filename for the voxel model (defaults to 'voxels.npy')",
     )
     parser = derive_cli_flags_from_config(parser, CMD_NAME)
     parser.set_defaults(cmd=_cmd)
