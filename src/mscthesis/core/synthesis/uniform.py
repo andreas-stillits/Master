@@ -11,9 +11,8 @@ from .helpers import (
 
 
 @log_call()
-def generate_uniform_swiss_voxels(
-    sample_id: str,
-    base_seed: int,
+def generate_uniform_swiss_voxels_from_seed(
+    random_seed: int,
     resolution: int,
     plug_aspect: float,
     num_cells: int,
@@ -25,11 +24,10 @@ def generate_uniform_swiss_voxels(
     np.ndarray[tuple[int, int, int], np.dtype[np.uint8]], dict[str, float | int]
 ]:
     """
-    Generate uniform swiss cheese voxel models for a list of sample IDs.
+    Generate uniform swiss cheese voxel models for a given seed.
 
     Args:
-        sample_id (str): Unique identifier for the sample. Mappable to int.
-        base_seed (int): Base seed for random number generation.
+        seed (int): Seed for random number generation.
         resolution (int): Number of voxels along each axis.
         plug_aspect (float): Ratio of plug radius to plug thickness/height.
         num_cells (int): Number of cells (spheres) to place in the model.
@@ -44,8 +42,6 @@ def generate_uniform_swiss_voxels(
         and 0 indicates airspace.
     """
 
-    # calulate and fix sample seed
-    random_seed = get_sample_seed(base_seed, sample_id)
     np.random.seed(random_seed)
 
     # scale planar resolution to have isotropic sampling of space
@@ -116,6 +112,58 @@ def generate_uniform_swiss_voxels(
         centers,
         radii,
         voxels,
+    )
+
+    return voxels, metadata
+
+
+@log_call()
+def generate_uniform_swiss_voxels_from_sample_id(
+    sample_id: str,
+    base_seed: int,
+    resolution: int,
+    plug_aspect: float,
+    num_cells: int,
+    min_radius: float,
+    max_radius: float,
+    min_separation: float,
+    max_attempts: int,
+) -> tuple[
+    np.ndarray[tuple[int, int, int], np.dtype[np.uint8]], dict[str, float | int]
+]:
+    """
+    Generate uniform swiss cheese voxel models for a given sample ID.
+
+    Args:
+        sample_id (str): Unique identifier for the sample. Mappable to int.
+        base_seed (int): Base seed for random number generation.
+        resolution (int): Number of voxels along each axis.
+        plug_aspect (float): Ratio of plug radius to plug thickness/height.
+        num_cells (int): Number of cells (spheres) to place in the model.
+        min_radius (float): Minimum radius of the cells.
+        max_radius (float): Maximum radius of the cells.
+        min_separation (float): Minimum separation distance between cells.
+        max_attempts (int): Maximum attempts to place each cell without overlap.
+
+    Returns:
+        np.ndarray: 3D numpy array of shape (planar_resolution, planar_resolution, resolution)
+        with uint8 values, where 1 indicates presence of tissue (cell)
+        and 0 indicates airspace.
+    """
+
+    # calulate and fix sample seed
+    random_seed = get_sample_seed(base_seed, sample_id)
+    np.random.seed(random_seed)
+
+    voxels, metadata = generate_uniform_swiss_voxels_from_seed(
+        random_seed,
+        resolution,
+        plug_aspect,
+        num_cells,
+        min_radius,
+        max_radius,
+        min_separation,
+        max_attempts,
     )
 
     return voxels, metadata

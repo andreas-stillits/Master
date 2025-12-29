@@ -4,7 +4,7 @@ import argparse
 
 from ....config.declaration import UniformSynthesisConfig
 from ....core.synthesis.helpers import save_voxel_model
-from ....core.synthesis.uniform import generate_uniform_swiss_voxels
+from ....core.synthesis.uniform import generate_uniform_swiss_voxels_from_sample_id
 from ....utilities.checks import validate_sample_id
 from ...shared import (
     add_target_directory_argument,
@@ -26,7 +26,7 @@ def _cmd(args: argparse.Namespace) -> None:
     cmdconfig: UniformSynthesisConfig = args.config.synthesize_uniform
 
     # generate voxel model
-    voxels, metadata = generate_uniform_swiss_voxels(
+    voxels, metadata = generate_uniform_swiss_voxels_from_sample_id(
         args.sample_id,
         cmdconfig.base_seed,
         cmdconfig.resolution,
