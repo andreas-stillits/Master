@@ -153,7 +153,6 @@ def generate_uniform_swiss_voxels_from_sample_id(
 
     # calulate and fix sample seed
     random_seed = get_sample_seed(base_seed, sample_id)
-    np.random.seed(random_seed)
 
     voxels, metadata = generate_uniform_swiss_voxels_from_seed(
         random_seed,
