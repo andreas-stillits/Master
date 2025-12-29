@@ -16,11 +16,14 @@ from ..utilities.paths import create_target_directory
 def initialize_parsers(
     parser: argparse.ArgumentParser,
 ) -> argparse._SubParsersAction[argparse.ArgumentParser]:
-    """Add global CLI flags to the given parser. These flags will be available for all commands and subcommands.
-        Also initialize the subparsers object and require a command to be given.
+    """
+    Add global CLI flags to the given parser. These flags will be available for all commands and subcommands.
+    Also initialize the subparsers object and require a command to be given.
 
     Args:
         parser (argparse.ArgumentParser): The argument parser to which global flags will be added.
+    Returns:
+        argparse._SubParsersAction[argparse.ArgumentParser]: The subparsers object for adding commands.
     """
     # add global flags
     default_config_path = ProjectConfig().meta.project_config_path
@@ -46,6 +49,13 @@ def initialize_parsers(
 def derive_cli_flags_from_config(
     parser: argparse.ArgumentParser, configname: str
 ) -> argparse.ArgumentParser:
+    """Derive CLI flags from the given command configuration name in ProjectConfig.
+    Args:
+        parser (argparse.ArgumentParser): The argument parser to which flags will be added.
+        configname (str): The name of the command configuration in ProjectConfig.
+    Returns:
+        argparse.ArgumentParser: The updated argument parser with added flags.
+    """
     # init defaults and derive dictionary form for cli overrides
     defaults = ProjectConfig()
     configname = configname.replace("-", "_")  # normalize possible dash usage
@@ -89,7 +99,17 @@ def derive_cli_flags_from_config(
 def assemble_cli_overrides(
     args: argparse.Namespace, defaults: ProjectConfig
 ) -> dict[str, Any]:
-    """Assemble CLI overrides from the given argparse.Namespace object."""
+    """
+    Assemble CLI overrides from the given argparse.Namespace object.
+    Args:
+        args (argparse.Namespace): The parsed CLI arguments.
+        defaults (ProjectConfig): The default project configuration.
+    Returns:
+        dict[str, Any]: A dictionary of CLI overrides to apply to the configuration.
+    Notes:
+        - Only arguments that differ from the defaults (coded) are included.
+        - Supports nested configuration sections but only one level deep.
+    """
     defaults_dict = defaults.model_dump()
     keys = defaults_dict.keys()
     args_dict = dict(vars(args))
@@ -118,7 +138,13 @@ def assemble_cli_overrides(
 
 
 def parse_string_value(raw: str) -> Any:
-    """Try to interpret a string representation, e.g. from CLI input."""
+    """
+    Try to interpret a string representation, e.g. from CLI input.
+    Args:
+        raw (str): The raw string input to interpret.
+    Returns:
+        Any: The interpreted value, or the original string if interpretation fails.
+    """
     try:
         value = ast.literal_eval(raw)
     except (ValueError, SyntaxError):
@@ -127,7 +153,8 @@ def parse_string_value(raw: str) -> Any:
 
 
 def add_target_directory_argument(parser: argparse.ArgumentParser) -> None:
-    """Add a common target directory argument to the given parser.
+    """
+    Add a common target directory argument to the given parser.
 
     Args:
         parser (argparse.ArgumentParser): The argument parser to which the target directory argument will be added.
@@ -145,7 +172,8 @@ def add_target_directory_argument(parser: argparse.ArgumentParser) -> None:
 def add_filename_argument(
     parser: argparse.ArgumentParser, default_filename: str
 ) -> None:
-    """Add a common filename argument to the given parser.
+    """
+    Add a common filename argument to the given parser.
 
     Args:
         parser (argparse.ArgumentParser): The argument parser to which the filename argument will be added.

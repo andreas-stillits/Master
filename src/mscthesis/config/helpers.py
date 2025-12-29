@@ -12,7 +12,17 @@ from .declaration import ProjectConfig
 
 
 def filter_config_for_command(model: BaseModel, command: str) -> dict[str, Any]:
-    """Extract configuration models relevant to a specific command."""
+    """
+    Extract configuration models relevant to a specific command.
+    Args:
+        model (BaseModel): The root configuration model.
+        command (str): The command to filter for.
+    Returns:
+        dict[str, Any]: A dictionary containing only the relevant configuration for the command.
+    Notes:
+        - This function assumes that each Pydantic model may have a `model_config` attribute
+            with a `json_schema_extra` dictionary that can contain a `commands` list.
+    """
 
     def _recurse(m: BaseModel) -> dict[str, Any] | None:
         model_config = getattr(m.__class__, "model_config", None)
@@ -40,14 +50,27 @@ def filter_config_for_command(model: BaseModel, command: str) -> dict[str, Any]:
 
 
 def load_config_from_file(path: Path | None) -> dict[str, Any]:
-    """Load configuration from a JSON file."""
+    """
+    Load configuration from a JSON file.
+    Args:
+        path (Path | None): The path to the JSON configuration file.
+    Returns:
+        dict[str, Any]: The loaded configuration as a dictionary.
+    """
     if path is None or not path.exists():
         return {}
     return json.loads(path.read_text(encoding="utf-8"))
 
 
 def deep_update(base: dict[str, Any], updates: dict[str, Any]) -> dict[str, Any]:
-    """Recursively update a nested dictionary with another dictionary."""
+    """
+    Recursively update a nested dictionary with another dictionary.
+    Args:
+        base    (dict[str, Any]): The original dictionary to be updated.
+        updates (dict[str, Any]): The dictionary with updates.
+    Returns:
+        dict[str, Any]: The updated dictionary.
+    """
     result = dict(base)
     # for all keys and values
     for key, value in updates.items():
@@ -63,8 +86,14 @@ def deep_update(base: dict[str, Any], updates: dict[str, Any]) -> dict[str, Any]
 def build_project_config(
     path: Path, overrides: dict[str, Any] | None = None
 ) -> ProjectConfig:
-    """Build the project configuration from defaults and file overrides.
+    """
+    Build the project configuration from defaults and file overrides.
     Can be called through API with a path pointing to a config.json file
+    Args:
+        path (Path): Path to the user-supplied configuration file.
+        overrides (dict[str, Any] | None): Additional overrides to apply.
+    Returns:
+        ProjectConfig: The constructed project configuration.
     """
     # load default config and translate to dictionary
     defaults = ProjectConfig()

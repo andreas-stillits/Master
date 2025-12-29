@@ -24,7 +24,20 @@ meta = ProjectConfig().meta  # get meta config for magic strings
 
 
 def _summarize_value(value: Any, max_length: int = meta.log_summary_max_length) -> str:
-    """Crude but practical value summarizer that acts as a Any -> str filter"""
+    """
+    Crude but practical value summarizer that acts as a Any -> str filter
+    Args:
+        value (Any): the value to summarize
+        max_length (int): maximum length of the summary string
+    Returns:
+        str: a string summarizing the value
+    Notes:
+        - tries to represent the value in a human-readable way
+        - strings and numbers are represented directly
+        - Paths are represented by their last two parts
+        - numpy arrays are summarized by their shape and dtype
+        - if the summary exceeds max_length, it is truncated with "..."
+    """
     try:
         # render value in its string representation
         if isinstance(value, (int, float, bool)):
@@ -48,7 +61,15 @@ def _summarize_value(value: Any, max_length: int = meta.log_summary_max_length) 
 def _summarize_args(
     func: Callable[..., Any], *args: Any, **kwargs: Any
 ) -> dict[str, str]:
-    """Describe the arguments passed to a function as strings"""
+    """
+    Describe the arguments passed to a function as strings.
+    Args:
+        func (Callable[..., Any]): the function to analyze
+        args (Any): positional arguments passed to the function
+        kwargs (Any): keyword arguments passed to the function
+    Returns:
+        dict[str, str]: a dictionary mapping argument names to their summarized values
+    """
     # get the signature obj of the function
     sig = inspect.signature(func)
     try:
@@ -72,9 +93,12 @@ def log_call(
         level (int): the logging.LEVEL to execute at (default is INFO)
                        will short-circuit if the global loglevel is set higher
         include_result (bool): whether or not to represent the function output
+    Returns:
+        Callable[[GhostType], GhostType]: the decorator function
     """
 
     def decorator(func: GhostType) -> GhostType:
+        """The actual decorator."""
         # format an informative name, e.g. core.io
         qualname = f".{func.__qualname__}"
         logger = logging.getLogger(func.__module__)  # get a per-target-module logger
@@ -111,7 +135,7 @@ def log_call(
                     exc_info=True,
                     extra={
                         meta.log_call_func_key: qualname,
-                        meta.log_call_details_key: f"args = {call_args} | error_type = {type(exc).__name__} | error_msg = {str(exc)}",
+                        meta.log_call_details_key: f"args: {call_args} | error_type = {type(exc).__name__} | error_msg = {str(exc)}",
                     },
                 )
                 raise  # re-raise the error
@@ -124,7 +148,7 @@ def log_call(
                 meta.log_call_end_msg,
                 extra={
                     meta.log_call_func_key: qualname,
-                    meta.log_call_details_key: f"duration = {duration:.3f} s, \t\t results = {_summarize_value(result) if include_result else '-'}",
+                    meta.log_call_details_key: f"duration: {duration:.3f} s, \t\t results: {_summarize_value(result) if include_result else '-'}",
                 },
             )
             return result
@@ -144,6 +168,8 @@ def setup_logging(
         log_level (LogLevel): The logging level to set.
         quiet (bool): If True, suppress console output.
         no_log (bool): If True, disable file logging.
+    Returns:
+        logging.Logger: The configured logger instance.
     """
     import builtins
 
@@ -197,13 +223,13 @@ def exit_program_log(logger: logging.Logger, duration: float) -> None:
     """Log program exit information including duration.
 
     Args:
+        logger (logging.Logger): The logger instance to use.
         duration (float): The total duration of the program execution in seconds.
-        logger (logging.Logger): The logger instance to use for logging.
     """
     logger.info(
         "program_exit",
         extra={
             meta.log_call_func_key: ".cli.main",
-            meta.log_call_details_key: f"duration = {duration:.3f} s  in total",
+            meta.log_call_details_key: f"duration: {duration:.3f} s  in total",
         },
     )

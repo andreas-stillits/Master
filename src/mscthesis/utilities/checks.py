@@ -12,6 +12,8 @@ def validate_sample_id(sample_id: str, required_digits: int) -> None:
     Args:
         sample_id (str): The sample ID to validate.
         required_digits (int): The required length of the sample ID.
+    Raises:
+        ValueError: If the sample ID does not match the required length.
     """
     if not len(sample_id) == required_digits:
         raise ValueError(
@@ -28,7 +30,8 @@ def verify_existence(path: str | Path) -> None:
 
     Args:
         path (str | Path): The path to verify.
-
+    Raises:
+        FileNotFoundError: If the path does not exist.
     """
     path = Path(path)
     if not path.exists():
@@ -42,7 +45,9 @@ def verify_extension(file_path: str | Path, *valid_extensions: str) -> None:
     Verify that the file has one of the valid extensions.
     Args:
         file_path (str | Path): The file path to verify.
-        valid_extensions (list[str]): List of valid file extensions (including dot).
+        valid_extensions (Sequence[str]): Sequence of valid file extensions (including dot).
+    Raises:
+        ValueError: If the file does not have a valid extension.
     """
     file_path = Path(file_path)
     if file_path.suffix.lower() not in valid_extensions:

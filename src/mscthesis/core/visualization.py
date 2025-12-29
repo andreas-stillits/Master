@@ -41,5 +41,5 @@ def visualize_voxels(voxels: np.ndarray, material_id: int = 1) -> None:
         raise ValueError("No voxels found with the specified material_id.")
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(points)
-    o3d.visualization.draw_geometries([pcd])
+    o3d.visualization.draw_geometries([pcd])  # type: ignore[reportAttributeAccessIssue]
     return

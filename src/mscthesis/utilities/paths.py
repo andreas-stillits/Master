@@ -4,6 +4,8 @@ from pathlib import Path
 
 from .log import log_call
 
+SAMPLES_FOLDERNAME: str = "samples"
+
 
 @log_call()
 def get_samples_path(storage_root: Path) -> Path:
@@ -11,8 +13,10 @@ def get_samples_path(storage_root: Path) -> Path:
     Get the path to the samples directory
     Args:
         storage_root (Path): The root storage directory.
+    Returns:
+        Path: The path to the samples directory.
     """
-    samples_path = storage_root / "samples"
+    samples_path = storage_root / SAMPLES_FOLDERNAME
     samples_path.mkdir(parents=True, exist_ok=True)
     return samples_path
 
@@ -46,6 +50,8 @@ def create_target_directory(
         storage_root (Path): The root storage directory.
         sample_id (str): The unique identifier for the sample.
         storage_foldername (str): The folder name under which to store the sample data.
+    Returns:
+        Path: The path to the created target directory.
     """
     samples_path = get_samples_path(storage_root)
     target_dir = samples_path / sample_id / storage_foldername
