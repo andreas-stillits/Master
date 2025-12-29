@@ -10,7 +10,6 @@ from ....core.synthesis.helpers import save_voxel_model
 from ....core.synthesis.uniform import generate_uniform_swiss_voxels
 from ....utilities.checks import validate_sample_id
 from ...shared import (
-    add_filename_argument,
     add_target_directory_argument,
     derive_cli_flags_from_config,
     determine_target_directory,
@@ -18,7 +17,6 @@ from ...shared import (
 )
 
 CMD_NAME = "synthesize-uniform"
-DEFAULT_FILENAME = "voxels.npy"
 
 
 def _cmd(args: argparse.Namespace) -> None:
@@ -68,7 +66,7 @@ def _cmd(args: argparse.Namespace) -> None:
             args.target_dir,
         )
 
-        filename = DEFAULT_FILENAME if args.filename is None else args.filename
+        filename = "voxels.npy"
         file_path = target_directory / filename
 
         save_voxel_model(voxels, file_path)
@@ -111,7 +109,6 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         help="A .txt file containing the sample IDs to batch over",
     )
     add_target_directory_argument(parser)
-    add_filename_argument(parser, DEFAULT_FILENAME)
     # --- Here we would have to add a wrapping in a sample ID folder per ranks output, not spray all in the same dir directly
     parser = derive_cli_flags_from_config(parser, CMD_NAME)
     parser.set_defaults(cmd=_cmd)
