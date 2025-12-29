@@ -26,7 +26,7 @@ def _cmd(args: argparse.Namespace) -> None:
     cmdconfig: UniformSynthesisConfig = args.config.synthesize_uniform
 
     # generate voxel model
-    voxels = generate_uniform_swiss_voxels(
+    voxels, metadata = generate_uniform_swiss_voxels(
         args.sample_id,
         cmdconfig.base_seed,
         cmdconfig.resolution,
@@ -57,7 +57,7 @@ def _cmd(args: argparse.Namespace) -> None:
         args.sample_id,
         inputs={},
         outputs={"voxel_model": str(file_path.expanduser().resolve())},
-        metadata={},
+        metadata=metadata,
         status="success",
     )
 

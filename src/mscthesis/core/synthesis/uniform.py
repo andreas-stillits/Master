@@ -3,29 +3,11 @@ from __future__ import annotations
 import numpy as np
 
 from ...utilities.log import log_call
-from .helpers import get_sample_seed
-
-
-def _initialize_meshgrid(
-    plug_aspect: float,
-    planar_resolution: int,
-    axial_resolution: int,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Initialize a 3D meshgrid for voxel generation.
-
-    Args:
-        planar_resolution (int): Number of voxels along the x and y axes.
-        axial_resolution (int): Number of voxels along the z axis.
-
-    Returns:
-        tuple[np.ndarray, np.ndarray, np.ndarray]: Meshgrid arrays for X, Y, Z coordinates.
-    """
-    x = np.linspace(-plug_aspect, plug_aspect, planar_resolution)
-    y = np.linspace(-plug_aspect, plug_aspect, planar_resolution)
-    z = np.linspace(0, 1, axial_resolution)
-    X, Y, Z = np.meshgrid(x, y, z, indexing="ij")
-    return X, Y, Z
+from .helpers import (
+    get_sample_seed,
+    initialize_meshgrid,
+    metadata_nonoverlapping_spheres,
+)
 
 
 @log_call()
@@ -39,7 +21,9 @@ def generate_uniform_swiss_voxels(
     max_radius: float,
     min_separation: float,
     max_attempts: int,
-) -> np.ndarray[tuple[int, int, int], np.dtype[np.uint8]]:
+) -> tuple[
+    np.ndarray[tuple[int, int, int], np.dtype[np.uint8]], dict[str, float | int]
+]:
     """
     Generate uniform swiss cheese voxel models for a list of sample IDs.
 
@@ -61,51 +45,56 @@ def generate_uniform_swiss_voxels(
     """
 
     # calulate and fix sample seed
-    np.random.seed(get_sample_seed(base_seed, sample_id))
+    random_seed = get_sample_seed(base_seed, sample_id)
+    np.random.seed(random_seed)
 
     # scale planar resolution to have isotropic sampling of space
     planar_resolution = int(2 * plug_aspect * resolution)
 
     # create meshgrid and empty voxels
-    X, Y, Z = _initialize_meshgrid(plug_aspect, planar_resolution, resolution)
+    X, Y, Z = initialize_meshgrid(plug_aspect, planar_resolution, resolution)
     voxels = np.zeros(
         (planar_resolution, planar_resolution, resolution), dtype=np.uint8
     )
 
     # initialize cell lists and determine placement boundaries
-    centers = []
-    radii = []
-    max_xy = plug_aspect - max_radius - min_separation
+    centers = np.zeros((num_cells, 3))
+    radii = np.zeros((num_cells,))
+    max_r = plug_aspect - max_radius - min_separation
     min_z = max_radius + min_separation
     max_z = 1 - max_radius - min_separation
 
+    if max_r <= 0:
+        raise ValueError(
+            f"Cell size {max_radius} and separation {min_separation} too large for given plug aspect {plug_aspect}."
+        )
+
     # placement of cells
-    for _ in range(num_cells):
+    for i in range(num_cells):
         attempts = 0
         while attempts < max_attempts:
             # draw random cell center
             center = np.array(
                 [
-                    np.random.uniform(-max_xy, max_xy),
-                    np.random.uniform(-max_xy, max_xy),
+                    np.random.uniform(-max_r, max_r),
+                    np.random.uniform(-max_r, max_r),
                     np.random.uniform(min_z, max_z),
                 ]
             )
 
             # enforce cyllindrical boundary
-            if np.linalg.norm(center[:2]) > max_xy:
+            if np.linalg.norm(center[:2]) > max_r:
                 attempts += 1
                 continue
 
             # draw random cell radius and check for overlaps
             radius = np.random.uniform(min_radius, max_radius)
-            if all(
-                np.linalg.norm(center - placed_center)
-                > (radius + placed_radius + min_separation)
-                for placed_center, placed_radius in zip(centers, radii, strict=False)
+            if np.all(
+                np.linalg.norm(centers[:i] - center, axis=1)
+                > (radii[:i] + radius + min_separation)
             ):
-                centers.append(center)
-                radii.append(radius)
+                centers[i] = center
+                radii[i] = radius
                 break
             attempts += 1
 
@@ -116,8 +105,17 @@ def generate_uniform_swiss_voxels(
         distance = np.sqrt(
             (X - center[0]) ** 2 + (Y - center[1]) ** 2 + (Z - center[2]) ** 2
         )
-        voxels |= (distance <= radius).astype(
-            np.uint8
-        )  # set tissue voxels to 1 within mask
+        voxels |= (distance <= radius).astype(np.uint8)
 
-    return voxels
+    # remove cells where radius is still zero (not placed)
+    centers = centers[radii > 0]
+    radii = radii[radii > 0]
+
+    metadata = metadata_nonoverlapping_spheres(
+        random_seed,
+        centers,
+        radii,
+        voxels,
+    )
+
+    return voxels, metadata

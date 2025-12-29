@@ -96,7 +96,7 @@ class UniformSynthesisConfig(BaseModel):
 
     base_seed: int = 123456
     resolution: int = 64
-    plug_aspect: float = 0.10
+    plug_aspect: float = 0.30
     num_cells: int = 100
     min_radius: float = 0.05
     max_radius: float = 0.15

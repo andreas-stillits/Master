@@ -26,7 +26,9 @@ def _cmd(args: argparse.Namespace) -> None:
     rank = comm.Get_rank()
     size = comm.Get_size()
     if rank == 0:
-        print(f"Starting MPI batch uniform synthesis with {size} processes...")
+        print(
+            f"Starting MPI batch uniform synthesis with {size} processes...", flush=True
+        )
         start = time.perf_counter()
 
     # get resolved config
@@ -36,7 +38,7 @@ def _cmd(args: argparse.Namespace) -> None:
     with open(args.sample_id_file_path, "r") as f:
         sample_ids = [line.strip() for line in f if line.strip()]
         if rank >= len(sample_ids):
-            print(f"Rank {rank} has no sample ID to process. Exiting.")
+            print(f"Rank {rank} has no sample ID to process. Exiting.", flush=True)
             return
         rank_sample_ids = sample_ids[rank::size]
 
@@ -46,7 +48,7 @@ def _cmd(args: argparse.Namespace) -> None:
         validate_sample_id(sample_id, args.config.behavior.sample_id_digits)
 
         # generate voxel model
-        voxels = generate_uniform_swiss_voxels(
+        voxels, metadata = generate_uniform_swiss_voxels(
             sample_id,
             cmdconfig.base_seed,
             cmdconfig.resolution,
@@ -78,17 +80,24 @@ def _cmd(args: argparse.Namespace) -> None:
             sample_id,
             inputs={},
             outputs={"voxel_model": str(file_path.expanduser().resolve())},
-            metadata={},
+            metadata=metadata,
             status="success",
         )
 
     if rank == 0:
         end = time.perf_counter()
         duration = end - start  # type: ignore
-        print(f"MPI batch uniform synthesis completed in {duration:.2f} seconds.")
-        print(f"Processed {len(sample_ids)} samples.")
         print(
-            f"Estimated total execution time for single process: {duration * size:.2f} seconds."
+            f"MPI batch uniform synthesis completed in {duration:.2f} seconds.",
+            flush=True,
+        )
+        print(
+            f"Processed {len(sample_ids)} samples.",
+            flush=True,
+        )
+        print(
+            f"Estimated total execution time for single process: {duration * size:.2f} seconds.",
+            flush=True,
         )
 
     return
