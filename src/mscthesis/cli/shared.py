@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 from ..config.declaration import LogLevel, ProjectConfig
 from ..config.helpers import deep_update, filter_config_for_command
-from ..utilities.checks import verify_existence
+from ..utilities.checks import validate_sample_id, verify_existence
 from ..utilities.manifest import dump_manifest
 from ..utilities.paths import create_target_directory
 
@@ -189,6 +189,34 @@ def add_filename_argument(
     return
 
 
+def interpret_sample_input(input: str, required_digits: int) -> list[str]:
+    """
+    Interpret the sample input argument and return a list of sample IDs
+    Args:
+        input (str): The sample input, either a single sample ID or a path to a text file
+                     containing multiple sample IDs (one per line).
+        required_digits (int): The required length of each sample ID.
+    Returns:
+        list[str]: A list of valid sample IDs.
+    """
+    sample_ids: list[str] = []
+    # check if input has .txt extension
+    if input.endswith(".txt"):
+        # verify file existence
+        verify_existence(input)
+        # read sample IDs from file
+        with open(input, "r") as f:
+            for line in f:
+                sample_id = line.strip()
+                if sample_id and validate_sample_id(sample_id, required_digits):
+                    sample_ids.append(sample_id)
+    else:
+        # single sample ID provided
+        if validate_sample_id(input, required_digits):
+            sample_ids.append(input)
+    return sample_ids
+
+
 def dump_resolved_command_config(
     config: ProjectConfig, command: str, target_directory: Path
 ) -> None:
@@ -251,6 +279,7 @@ def document_command_execution(
     config: ProjectConfig,
     target_directory: Path,
     command_name: str,
+    num_processes: int,
     sample_id: str,
     inputs: dict[str, str],
     outputs: dict[str, str],
@@ -277,6 +306,7 @@ def document_command_execution(
         dump_manifest(
             target_directory,
             command_name,
+            num_processes,
             sample_id,
             inputs,
             outputs,

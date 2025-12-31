@@ -3,11 +3,13 @@ from __future__ import annotations
 import argparse
 from typing import Any
 
+from mpi4py import MPI
+
 from ....config.declaration import ProjectConfig
 from ....config.helpers import load_config_from_file
 
 
-def _cmd(args: argparse.Namespace) -> None:
+def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
     """Command to get a specific configuration attribute via a dot-formated key."""
     # get resolved config
     config: ProjectConfig = args.config

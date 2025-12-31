@@ -3,18 +3,28 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from mpi4py import MPI
+
 from ....config.declaration import ProjectConfig
 
 
-def _cmd(args: argparse.Namespace) -> None:
-    config: ProjectConfig = args.config  # always a defaults instance due to cli.main:main structure
+def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
+    config: ProjectConfig = (
+        args.config
+    )  # always a defaults instance due to cli.main:main structure
 
     # get path to write to depending on args.user
-    path: Path = config.meta.project_config_path if not args.user else config.meta.user_config_path
+    path: Path = (
+        config.meta.project_config_path
+        if not args.user
+        else config.meta.user_config_path
+    )
 
     # if file exists and user did not force override
     if path.is_file() and not args.force:
-        print(f"Config file already exists at: {path}. Use --force to overwrite with defaults. ")
+        print(
+            f"Config file already exists at: {path}. Use --force to overwrite with defaults. "
+        )
         return
     # else override with defaults
     path.parent.mkdir(parents=True, exist_ok=True)

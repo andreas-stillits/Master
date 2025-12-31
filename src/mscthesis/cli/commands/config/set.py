@@ -4,12 +4,14 @@ import argparse
 from pathlib import Path
 from typing import Any
 
+from mpi4py import MPI
+
 from ....config.declaration import ProjectConfig
 from ....config.helpers import load_config_from_file
 from ...shared import parse_string_value
 
 
-def _cmd(args: argparse.Namespace) -> None:
+def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
     """Command to set a configuration key to a specified value."""
     # get resolved config
     config: ProjectConfig = args.config
@@ -23,7 +25,11 @@ def _cmd(args: argparse.Namespace) -> None:
         ).model_dump()
     )
     # get the path to write to depending on args.user
-    path: Path = config.meta.project_config_path if not args.user else config.meta.user_config_path
+    path: Path = (
+        config.meta.project_config_path
+        if not args.user
+        else config.meta.user_config_path
+    )
     # walk config dict according to cli passed dot-string
     current = config_dict
     parts = args.key.split(".")  # separate keys
@@ -35,10 +41,14 @@ def _cmd(args: argparse.Namespace) -> None:
         # update the dict current points to
         current = current[part]
     # assign the new value parsed as string through cli
-    current[parts[-1]] = parse_string_value(args.value)  # Any | None if key not truthful
+    current[parts[-1]] = parse_string_value(
+        args.value
+    )  # Any | None if key not truthful
 
     try:
-        config = ProjectConfig.model_validate(config_dict)  # try to validate updated config
+        config = ProjectConfig.model_validate(
+            config_dict
+        )  # try to validate updated config
     except Exception as exc:
         raise ValueError(
             f"Setting '{args.key}' to '{args.value}' results in invalid config: {exc}"

@@ -14,7 +14,6 @@ from .commands.config import get as config_get
 from .commands.config import init as config_init
 from .commands.config import set as config_set
 from .commands.config import show as config_show
-from .commands.mpibatch import synthesize_uniform as mpibatch_synthesize_uniform
 from .commands.synthesis import uniform as synthesize_uniform
 from .shared import (
     assemble_cli_overrides,
@@ -64,21 +63,6 @@ def _build_parser() -> argparse.ArgumentParser:
     config_get.add_parser(config_subparsers)
     config_set.add_parser(config_subparsers)
     # ... add more commands here that act as subcommands of "config ..."
-    # =========================
-
-    # === MPIBATCH COMMANDS ===
-    mpibatch_parser = subparsers.add_parser(
-        "mpibatch",
-        help="Commands related to MPI batch job submission and management.",
-    )
-    mpibatch_subparsers = mpibatch_parser.add_subparsers(
-        title="mpibatch_commands",
-        dest="mpibatch_command",  # store chosen mpibatch command in args.mpibatch_command
-    )
-    mpibatch_subparsers.required = True
-    # wire in possible mpibatch <subcommand>
-    mpibatch_synthesize_uniform.add_parser(mpibatch_subparsers)
-
     # ======================
 
     # === OTHER COMMANDS ===
@@ -120,10 +104,11 @@ def main(argv: list[str] | None = None) -> int:
     # get default config
     defaults: ProjectConfig = ProjectConfig()
 
-    if hasattr(args, "config_command") and args.config_command == "init" and rank == 0:
+    if hasattr(args, "config_command") and args.config_command == "init":
         # execute init command
-        args.config = defaults  # defaults
-        args.cmd(args)
+        if rank == 0:
+            args.config = defaults  # defaults
+            args.cmd(args, comm)
         return 0
 
     # if the user has not initialized a config file in their home directory, ask them to:
@@ -153,7 +138,7 @@ def main(argv: list[str] | None = None) -> int:
         b = config.behavior
 
         # force quiet mode if command executed with multiple workers (suppress logs on workers)
-        if is_mpi:
+        if is_mpi and rank != 0:
             b.quiet = True
             b.no_log = True
 

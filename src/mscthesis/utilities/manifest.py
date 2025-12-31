@@ -13,6 +13,7 @@ from .log import log_call
 def dump_manifest(
     target_directory: Path,
     command_name: str,
+    num_processes: int,
     sample_id: str,
     inputs: dict[str, Any],
     outputs: dict[str, Any],
@@ -36,6 +37,7 @@ def dump_manifest(
     manifest: dict[str, Any] = {}
     manifest["execution_time"] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     manifest["command"] = command_name
+    manifest["num_processes"] = num_processes
     manifest["sample_id"] = sample_id
     manifest["inputs"] = inputs
     manifest["outputs"] = outputs

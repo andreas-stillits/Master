@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import argparse
 
+from mpi4py import MPI
+
 from ....config.declaration import ProjectConfig
 from ....config.helpers import load_config_from_file
 
 
-def _cmd(args: argparse.Namespace) -> None:
+def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
     """Command to print the resolved (user or project) config to stdout in JSON format."""
     config: ProjectConfig = args.config
     if not args.user:

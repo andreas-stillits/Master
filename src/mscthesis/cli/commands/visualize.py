@@ -3,30 +3,35 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from mpi4py import MPI
+
 from ...core.visualization import load_voxels_from_npy, visualize_voxels
 from ...utilities.checks import verify_existence
 from ...utilities.paths import expand_samples_path
 from ..shared import derive_cli_flags_from_config
 
 
-def _cmd(args: argparse.Namespace) -> None:
+def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
     """Command to visualize the contents of a file via file extension"""
-    file_path: Path = expand_samples_path(
-        args.config.behavior.storage_root, args.file_path
-    )
+    rank = comm.Get_rank()
 
-    # verify existence of file
-    verify_existence(file_path)
-
-    # visualize based on file extension
-    if file_path.suffix == ".npy":
-        voxels = load_voxels_from_npy(file_path)
-        visualize_voxels(voxels, material_id=1)
-
-    else:
-        raise ValueError(
-            f"Unsupported file extension '{file_path.suffix}' for visualization."
+    if rank == 0:
+        file_path: Path = expand_samples_path(
+            args.config.behavior.storage_root, args.file_path
         )
+
+        # verify existence of file
+        verify_existence(file_path)
+
+        # visualize based on file extension
+        if file_path.suffix == ".npy":
+            voxels = load_voxels_from_npy(file_path)
+            visualize_voxels(voxels, material_id=1)
+
+        else:
+            raise ValueError(
+                f"Unsupported file extension '{file_path.suffix}' for visualization."
+            )
 
     return
 

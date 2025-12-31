@@ -2,32 +2,32 @@ from __future__ import annotations
 
 import argparse
 
+from mpi4py import MPI
+
 from ....config.declaration import UniformSynthesisConfig
 from ....core.synthesis.helpers import save_voxel_model
 from ....core.synthesis.uniform import generate_uniform_swiss_voxels_from_sample_id
-from ....utilities.checks import validate_sample_id
 from ...shared import (
     add_target_directory_argument,
     derive_cli_flags_from_config,
     determine_target_directory,
     document_command_execution,
+    interpret_sample_input,
 )
 
 CMD_NAME = "synthesize-uniform"
 
 
-def _cmd(args: argparse.Namespace) -> None:
-    """Command to generate a uniform swiss cheese voxel model"""
-
-    # validate sample ID
-    validate_sample_id(args.sample_id, args.config.behavior.sample_id_digits)
-
+def _execute_single_sample_id(
+    args: argparse.Namespace, sample_id: str, size: int
+) -> None:
+    """Execute synthesis for a single sample ID"""
     # get resolved config
     cmdconfig: UniformSynthesisConfig = args.config.synthesize_uniform
 
     # generate voxel model
     voxels, metadata = generate_uniform_swiss_voxels_from_sample_id(
-        args.sample_id,
+        sample_id,
         cmdconfig.base_seed,
         cmdconfig.resolution,
         cmdconfig.plug_aspect,
@@ -42,7 +42,7 @@ def _cmd(args: argparse.Namespace) -> None:
     target_directory = determine_target_directory(
         args.config,
         CMD_NAME,
-        args.sample_id,
+        sample_id,
         args.target_dir,
     )
     filename = "voxels.npy"
@@ -54,12 +54,34 @@ def _cmd(args: argparse.Namespace) -> None:
         args.config,
         target_directory,
         CMD_NAME,
-        args.sample_id,
+        size,
+        sample_id,
         inputs={},
         outputs={"voxel_model": str(file_path.expanduser().resolve())},
         metadata=metadata,
         status="success",
     )
+
+    return
+
+
+def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
+    """Command to generate a uniform swiss cheese voxel model"""
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    sample_ids = interpret_sample_input(
+        args.sample_input, args.config.behavior.sample_id_digits
+    )
+
+    # early exit if less samples than workers - also cathes the case of zero samples:
+    if rank > len(sample_ids) or len(sample_ids) == 0:
+        return
+
+    # distribute sample IDs among workers
+    assigned_sample_ids = sample_ids[rank::size]
+    for sample_id in assigned_sample_ids:
+        _execute_single_sample_id(args, sample_id, size)
 
     return
 
@@ -74,7 +96,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         epilog=f"msc {CMD_NAME} [options] <sample_id>",
     )
     parser.add_argument(
-        "sample_id", type=str, help="Unique identifier for the generated sample"
+        "sample_input", type=str, help="Unique identifier for the generated sample"
     )
     add_target_directory_argument(parser)
     parser = derive_cli_flags_from_config(parser, CMD_NAME)

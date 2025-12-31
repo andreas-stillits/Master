@@ -3,10 +3,12 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from mpi4py import MPI
+
 from ....config.declaration import ProjectConfig
 
 
-def _cmd(args: argparse.Namespace) -> None:
+def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
     """Command to copy the current settings to a specified file in JSON format."""
     # get resolved config
     config: ProjectConfig = args.config

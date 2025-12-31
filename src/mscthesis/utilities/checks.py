@@ -6,7 +6,7 @@ from .log import log_call
 
 
 @log_call()
-def validate_sample_id(sample_id: str, required_digits: int) -> None:
+def validate_sample_id(sample_id: str, required_digits: int) -> bool:
     """
     Validate that the sample ID matches the required length.
     Args:
@@ -15,12 +15,21 @@ def validate_sample_id(sample_id: str, required_digits: int) -> None:
     Raises:
         ValueError: If the sample ID does not match the required length.
     """
+    # if not required number of digits
     if not len(sample_id) == required_digits:
         raise ValueError(
             f"Sample ID '{sample_id}' does not match required "
             f"length of {required_digits} characters."
         )
-    return
+    # if not mappable to int
+    try:
+        int(sample_id)
+    except ValueError as err:
+        raise ValueError(
+            f"Sample ID '{sample_id}' is not a valid integer string."
+        ) from err
+
+    return True
 
 
 @log_call()
