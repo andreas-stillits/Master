@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import time
 
+from mpi4py import MPI
+
 from ..config.declaration import ProjectConfig
 from ..config.helpers import build_project_config
 from ..utilities.log import exit_program_log, setup_logging
@@ -97,11 +99,20 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     """Main entry point for the CLI."""
+    # handle potential MPI initialization and print info from rank 0
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    is_mpi = size > 1
+
+    if is_mpi and rank == 0:
+        print(f"MPI entry with {size} processes.", flush=True)
+
     parser = _build_parser()
 
     # Enable tab completion if argcomplete is available (user must run: 'eval "$(register-python-argcomplete mscthesis)"'
     # in bash per session or add to .bashrc (I did))
-    if argcomplete is not None:
+    if argcomplete is not None and rank == 0:
         argcomplete.autocomplete(parser)
 
     args = parser.parse_args(argv)
@@ -109,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
     # get default config
     defaults: ProjectConfig = ProjectConfig()
 
-    if hasattr(args, "config_command") and args.config_command == "init":
+    if hasattr(args, "config_command") and args.config_command == "init" and rank == 0:
         # execute init command
         args.config = defaults  # defaults
         args.cmd(args)
@@ -117,15 +128,20 @@ def main(argv: list[str] | None = None) -> int:
 
     # if the user has not initialized a config file in their home directory, ask them to:
     if not defaults.meta.user_config_path.is_file():
-        print(
-            f"User config file not found at: {defaults.meta.user_config_path}. "
-            "Please run 'msc config --user init' to initialize project configuration."
-        )
-        print(
-            "NICETY: Optionally add the line 'eval '$(register-python-argcomplete mscthesis)'' "
-            "to your shell profile (.bashrc/.zshrc) for cli autocompletion. "
-        )
-        return 1  # error code in the terminal
+        if rank == 0:
+            print(
+                f"User config file not found at: {defaults.meta.user_config_path}. "
+                "Please run 'msc config --user init' to initialize project configuration.",
+                flush=True,
+            )
+            print(
+                "NICETY: Optionally add the line 'eval '$(register-python-argcomplete mscthesis)'' "
+                "to your shell profile (.bashrc/.zshrc) for cli autocompletion. ",
+                flush=True,
+            )
+            return 1  # error code in the terminal
+        else:
+            return 1
     # if project config has been initialized
     else:
         # resolve config after PROJECT (cwd) > USER (home) > DEFAULTS (code)
@@ -136,32 +152,37 @@ def main(argv: list[str] | None = None) -> int:
         args.config = config  # pass resolved config to args for commands to use
         b = config.behavior
 
-        # force quiet mode if command is mpibatch subcommand (suppress logs on workers)
-        if hasattr(args, "mpibatch_command"):
+        # force quiet mode if command executed with multiple workers (suppress logs on workers)
+        if is_mpi:
             b.quiet = True
             b.no_log = True
 
         logger = setup_logging(
             b.storage_root / b.log_filename, b.log_level, b.quiet, b.no_log
         )
-
-        # Call the function associated with the chosen command
         if hasattr(args, "cmd"):
 
-            # commands should associate parser.set_defaults(cmd=...) with the cmd function
-            start_time = time.perf_counter()
+            is_config_cmd = hasattr(args, "config_command")
 
-            args.cmd(args)
+            if is_mpi and is_config_cmd and rank != 0:
+                return 0
 
-            duration = time.perf_counter() - start_time
+            if rank == 0:
+                start_time = time.perf_counter()
 
-            # log total command execution time
-            if not b.no_log:
-                exit_program_log(logger, duration)
+                args.cmd(args, comm)
 
+                duration = time.perf_counter() - start_time
+
+                if not b.no_log:
+                    exit_program_log(logger, duration)
+
+            else:
+                args.cmd(args, comm)
         else:
-            print(f"Unrecognized command: {argv}")
-            parser.print_help()  # print top level help if not a valid command
+            if rank == 0:
+                print(f"Unrecognized command: {argv}", flush=True)
+                parser.print_help()  # print top level help if not a valid command
 
         return 0
 
