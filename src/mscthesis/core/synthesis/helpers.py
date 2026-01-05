@@ -82,7 +82,7 @@ def metadata_nonoverlapping_spheres(
     metadata["mean_radius"] = float(np.mean(radii)) if len(radii) > 0 else 0.0
     metadata["max_radius"] = float(np.max(radii)) if len(radii) > 0 else 0.0
     metadata["mean_cell_volume"] = (
-        float(np.mean([(4 / 3) * np.pi * r**3 for r in radii]))
+        float(np.mean([(4 / 3) * np.pi * r**3 for r in radii]))  # type: ignore
         if len(radii) > 0
         else 0.0
     )
