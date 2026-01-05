@@ -120,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
                 flush=True,
             )
             print(
-                "NICETY: Optionally add the line 'eval '$(register-python-argcomplete mscthesis)'' "
+                "NICETY: Optionally add the line: eval ''$(register-python-argcomplete mscthesis)'' "
                 "to your shell profile (.bashrc/.zshrc) for cli autocompletion. ",
                 flush=True,
             )
