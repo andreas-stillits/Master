@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any, Iterable
 
 import numpy as np
@@ -148,21 +147,3 @@ def triangulate_voxels(
     )
 
     return mesh, metadata
-
-
-@log_call()
-def save_triangulated_mesh(
-    mesh: o3d.geometry.TriangleMesh,
-    file_path: str | Path,
-) -> None:
-    """
-    Save the triangulated mesh to a file.
-
-    Args:
-        mesh (o3d.geometry.TriangleMesh): The triangulated mesh to save.
-        file_path (str | Path): The output file path for the .stl file.
-    """
-    written = o3d.io.write_triangle_mesh(file_path, mesh)
-    if not written:
-        raise IOError(f"Failed to write mesh to {file_path}")
-    return

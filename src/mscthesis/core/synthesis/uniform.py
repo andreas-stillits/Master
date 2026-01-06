@@ -1,17 +1,53 @@
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from ...utilities.log import log_call
 from .helpers import (
     get_sample_seed,
     initialize_meshgrid,
-    metadata_nonoverlapping_spheres,
 )
 
 
 @log_call()
-def generate_uniform_swiss_voxels_from_seed(
+def _metadata(
+    random_seed: int, centers: np.ndarray, radii: np.ndarray, voxels: np.ndarray
+) -> dict[str, Any]:
+    """
+    Generate metadata for a voxel model non-overlapping spheres.
+
+    Args:
+        random_seed (int): Seed used for random number generation.
+        centers (np.ndarray): Array of cell centers of shape (N, 3).
+        radii (np.ndarray): Array of cell radii of shape (N,).
+        voxels (np.ndarray): The generated voxel model of shape (X, Y, Z).
+
+    Returns:
+        dict[str, Any]: Metadata dictionary.
+    """
+    metadata: dict[str, Any] = {}
+    metadata["random_seed"] = random_seed
+    metadata["num_cells_placed"] = len(centers)
+    metadata["min_radius"] = float(np.min(radii)) if len(radii) > 0 else 0.0
+    metadata["mean_radius"] = float(np.mean(radii)) if len(radii) > 0 else 0.0
+    metadata["max_radius"] = float(np.max(radii)) if len(radii) > 0 else 0.0
+    metadata["mean_cell_volume"] = (
+        float(np.mean([(4 / 3) * np.pi * r**3 for r in radii]))  # type: ignore
+        if len(radii) > 0
+        else 0.0
+    )
+    metadata["mean_porosity"] = 1.0 - float(np.sum(voxels) / voxels.size)
+    metadata["std_porosity"] = float(
+        np.std(1.0 - np.sum(voxels, axis=(0, 1)) / (voxels.shape[0] * voxels.shape[1]))
+    )
+    metadata["status"] = "success"
+    return metadata
+
+
+@log_call()
+def generate_voxels_from_seed(
     random_seed: int,
     resolution: int,
     plug_aspect: float,
@@ -20,9 +56,7 @@ def generate_uniform_swiss_voxels_from_seed(
     max_radius: float,
     min_separation: float,
     max_attempts: int,
-) -> tuple[
-    np.ndarray[tuple[int, int, int], np.dtype[np.uint8]], dict[str, float | int]
-]:
+) -> tuple[np.ndarray[tuple[int, int, int]], dict[str, Any]]:
     """
     Generate uniform swiss cheese voxel models for a given seed.
 
@@ -40,18 +74,12 @@ def generate_uniform_swiss_voxels_from_seed(
         np.ndarray: 3D numpy array of shape (planar_resolution, planar_resolution, resolution)
         with uint8 values, where 1 indicates presence of tissue (cell)
         and 0 indicates airspace.
+        dict[str, Any]: Metadata dictionary.
     """
 
     np.random.seed(random_seed)
 
-    # scale planar resolution to have isotropic sampling of space
-    planar_resolution = int(2 * plug_aspect * resolution)
-
-    # create meshgrid and empty voxels
-    X, Y, Z = initialize_meshgrid(plug_aspect, planar_resolution, resolution)
-    voxels = np.zeros(
-        (planar_resolution, planar_resolution, resolution), dtype=np.uint8
-    )
+    voxels, (X, Y, Z) = initialize_meshgrid(plug_aspect, resolution)
 
     # initialize cell lists and determine placement boundaries
     centers = np.zeros((num_cells, 3))
@@ -107,7 +135,7 @@ def generate_uniform_swiss_voxels_from_seed(
     centers = centers[radii > 0]
     radii = radii[radii > 0]
 
-    metadata = metadata_nonoverlapping_spheres(
+    metadata = _metadata(
         random_seed,
         centers,
         radii,
@@ -118,7 +146,7 @@ def generate_uniform_swiss_voxels_from_seed(
 
 
 @log_call()
-def generate_uniform_swiss_voxels_from_sample_id(
+def generate_voxels_from_sample_id(
     sample_id: str,
     base_seed: int,
     resolution: int,
@@ -128,9 +156,7 @@ def generate_uniform_swiss_voxels_from_sample_id(
     max_radius: float,
     min_separation: float,
     max_attempts: int,
-) -> tuple[
-    np.ndarray[tuple[int, int, int], np.dtype[np.uint8]], dict[str, float | int]
-]:
+) -> tuple[np.ndarray[tuple[int, int, int]], dict[str, Any]]:
     """
     Generate uniform swiss cheese voxel models for a given sample ID.
 
@@ -149,12 +175,13 @@ def generate_uniform_swiss_voxels_from_sample_id(
         np.ndarray: 3D numpy array of shape (planar_resolution, planar_resolution, resolution)
         with uint8 values, where 1 indicates presence of tissue (cell)
         and 0 indicates airspace.
+        dict[str, Any]: Metadata dictionary.
     """
 
     # calulate and fix sample seed
     random_seed = get_sample_seed(base_seed, sample_id)
 
-    voxels, metadata = generate_uniform_swiss_voxels_from_seed(
+    voxels, metadata = generate_voxels_from_seed(
         random_seed,
         resolution,
         plug_aspect,

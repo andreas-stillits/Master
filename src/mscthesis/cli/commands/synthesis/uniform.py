@@ -5,8 +5,8 @@ import argparse
 from mpi4py import MPI
 
 from ....config.declaration import UniformSynthesisConfig
-from ....core.synthesis.helpers import save_voxel_model
-from ....core.synthesis.uniform import generate_uniform_swiss_voxels_from_sample_id
+from ....core.io import save_voxels
+from ....core.synthesis.uniform import generate_voxels_from_sample_id
 from ...shared import (
     add_target_directory_argument,
     derive_cli_flags_from_config,
@@ -16,6 +16,7 @@ from ...shared import (
 )
 
 CMD_NAME = "synthesize-uniform"
+STORAGE_FOLDERNAME = "synthesis"
 
 
 def _execute_single_sample_id(
@@ -26,7 +27,7 @@ def _execute_single_sample_id(
     cmdconfig: UniformSynthesisConfig = args.config.synthesize_uniform
 
     # generate voxel model
-    voxels, metadata = generate_uniform_swiss_voxels_from_sample_id(
+    voxels, metadata = generate_voxels_from_sample_id(
         sample_id,
         cmdconfig.base_seed,
         cmdconfig.resolution,
@@ -41,14 +42,14 @@ def _execute_single_sample_id(
     # save voxel model to disk
     target_directory = determine_target_directory(
         args.config,
-        CMD_NAME,
         sample_id,
+        STORAGE_FOLDERNAME,
         args.target_dir,
     )
     filename = "voxels.npy"
     file_path = target_directory / filename
 
-    save_voxel_model(voxels, file_path)
+    save_voxels(voxels, file_path)
 
     document_command_execution(
         args.config,
@@ -71,7 +72,9 @@ def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
     size = comm.Get_size()
 
     sample_ids = interpret_sample_input(
-        args.sample_input, args.config.behavior.sample_id_digits
+        args.config.behavior.storage_root,
+        args.sample_input,
+        args.config.behavior.sample_id_digits,
     )
 
     # early exit if less samples than workers - also cathes the case of zero samples:

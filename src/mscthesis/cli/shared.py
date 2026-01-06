@@ -10,7 +10,7 @@ from ..config.declaration import LogLevel, ProjectConfig
 from ..config.helpers import deep_update, filter_config_for_command
 from ..utilities.checks import validate_sample_id, verify_existence
 from ..utilities.manifest import dump_manifest
-from ..utilities.paths import create_target_directory
+from ..utilities.paths import create_target_directory, expand_inventory_path
 
 
 def initialize_parsers(
@@ -169,27 +169,9 @@ def add_target_directory_argument(parser: argparse.ArgumentParser) -> None:
     return
 
 
-def add_filename_argument(
-    parser: argparse.ArgumentParser, default_filename: str
-) -> None:
-    """
-    Add a common filename argument to the given parser.
-
-    Args:
-        parser (argparse.ArgumentParser): The argument parser to which the filename argument will be added.
-        default_filename (str): The default filename to use if none is provided.
-    """
-    parser.add_argument(
-        "-f",
-        "--filename",
-        type=str,
-        default=None,
-        help=f"Filename for the output file (default: {default_filename}).",
-    )
-    return
-
-
-def interpret_sample_input(input: str, required_digits: int) -> list[str]:
+def interpret_sample_input(
+    storage_root: Path, input: str, required_digits: int
+) -> list[str]:
     """
     Interpret the sample input argument and return a list of sample IDs
     Args:
@@ -202,6 +184,8 @@ def interpret_sample_input(input: str, required_digits: int) -> list[str]:
     sample_ids: list[str] = []
     # check if input has .txt extension
     if input.endswith(".txt"):
+        # expand path
+        input = expand_inventory_path(storage_root, input)
         # verify file existence
         verify_existence(input)
         # read sample IDs from file
@@ -235,36 +219,27 @@ def dump_resolved_command_config(
 
 def determine_target_directory(
     config: ProjectConfig,
-    command_name: str,
     sample_id: str,
+    storage_foldername: str,
     target_dir: Optional[str] = None,
 ) -> Path:
     """
-    Determine the target directory and file path based on CLI arguments and command configuration.
+    Determine the target directory for saving output files.
     Args:
-        args (argparse.Namespace): The parsed CLI arguments.
-        cmdconfig (BaseModel): The command-specific configuration model.
-        allowed_extensions (str): Allowed file extensions for the output filename.
+        config (ProjectConfig): The project configuration carying storage root information.
+        sample_id (str): The sample ID for which the target directory is being determined.
+        storage_foldername (str): The folder name under the storage root for this command.
+        target_dir (Optional[str]): An optional target directory override provided via CLI argument.
     Returns:
-        tuple[Path, Path]: A tuple containing the target directory and file path.
-    Note:
-        cmdconfig must expose 'storage_foldername'
+        Path: The determined target directory path.
     """
-    command_name = command_name.replace("-", "_")  # normalize possible dash usage
-    # validate command exists in ProjectConfig
-    if not hasattr(config, command_name):
-        raise ValueError(f"ProjectConfig has no attribute '{command_name}'")
-    cmdconfig = getattr(config, command_name)
-    # validate cmdconfig has required attribute
-    if not hasattr(cmdconfig, "storage_foldername"):
-        raise ValueError("cmdconfig must have a 'storage_foldername' attribute")
 
     # determine target directory
     target_directory = (
         create_target_directory(
             config.behavior.storage_root,
             sample_id,
-            cmdconfig.storage_foldername,  # type: ignore
+            storage_foldername,
         )
         if target_dir is None
         else Path(target_dir)
