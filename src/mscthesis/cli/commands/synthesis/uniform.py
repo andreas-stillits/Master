@@ -7,10 +7,10 @@ from mpi4py import MPI
 from ....config.declaration import UniformSynthesisConfig
 from ....core.io import save_voxels
 from ....core.synthesis.uniform import generate_voxels_from_sample_id
+from ....utilities.paths import determine_target_directory
 from ...shared import (
     add_target_directory_argument,
     derive_cli_flags_from_config,
-    determine_target_directory,
     document_command_execution,
     interpret_sample_input,
 )
@@ -41,7 +41,7 @@ def _execute_single_sample_id(
 
     # save voxel model to disk
     target_directory = determine_target_directory(
-        args.config,
+        args.config.behavior.storage_root,
         sample_id,
         STORAGE_FOLDERNAME,
         args.target_dir,

@@ -4,13 +4,13 @@ import argparse
 import ast
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from ..config.declaration import LogLevel, ProjectConfig
 from ..config.helpers import deep_update, filter_config_for_command
 from ..utilities.checks import validate_sample_id, verify_existence
 from ..utilities.manifest import dump_manifest
-from ..utilities.paths import create_target_directory, expand_inventory_path
+from ..utilities.paths import expand_inventory_path
 
 
 def initialize_parsers(
@@ -215,39 +215,6 @@ def dump_resolved_command_config(
     target_path = target_directory / config.meta.config_name
     target_path.write_text(json.dumps(command_config, indent=2, default=str))
     return
-
-
-def determine_target_directory(
-    config: ProjectConfig,
-    sample_id: str,
-    storage_foldername: str,
-    target_dir: Optional[str] = None,
-) -> Path:
-    """
-    Determine the target directory for saving output files.
-    Args:
-        config (ProjectConfig): The project configuration carying storage root information.
-        sample_id (str): The sample ID for which the target directory is being determined.
-        storage_foldername (str): The folder name under the storage root for this command.
-        target_dir (Optional[str]): An optional target directory override provided via CLI argument.
-    Returns:
-        Path: The determined target directory path.
-    """
-
-    # determine target directory
-    target_directory = (
-        create_target_directory(
-            config.behavior.storage_root,
-            sample_id,
-            storage_foldername,
-        )
-        if target_dir is None
-        else Path(target_dir)
-    )
-
-    verify_existence(target_directory)
-
-    return target_directory
 
 
 def document_command_execution(

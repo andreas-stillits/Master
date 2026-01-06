@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from .checks import verify_existence
 from .log import log_call
 
 SAMPLES_FOLDERNAME: str = "samples"
@@ -92,3 +93,37 @@ def create_target_directory(
     target_dir = samples_path / sample_id / storage_foldername
     target_dir.mkdir(parents=True, exist_ok=True)
     return target_dir
+
+
+@log_call()
+def determine_target_directory(
+    storage_root: Path,
+    sample_id: str,
+    storage_foldername: str,
+    target_dir: str | None = None,
+) -> Path:
+    """
+    Determine the target directory for saving output files.
+    Args:
+        storage_root (Path): The root storage directory.
+        sample_id (str): The sample ID for which the target directory is being determined.
+        storage_foldername (str): The folder name under the storage root for this command.
+        target_dir (Optional[str]): An optional target directory override provided via CLI argument.
+    Returns:
+        Path: The determined target directory path.
+    """
+
+    # determine target directory
+    target_directory = (
+        create_target_directory(
+            storage_root,
+            sample_id,
+            storage_foldername,
+        )
+        if target_dir is None
+        else Path(target_dir)
+    )
+
+    verify_existence(target_directory)
+
+    return target_directory

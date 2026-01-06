@@ -4,53 +4,52 @@ import argparse
 
 from mpi4py import MPI
 
-from ...config.declaration import TriangulationConfig
-from ...core.meshing.triangulation import save_triangulated_mesh, triangulate_voxels
-from ..shared import (
+from ....config.declaration import UniformSynthesisConfig
+from ....core.io import save_voxels
+from ....core.synthesis.uniform import generate_voxels_from_sample_id
+from ....utilities.paths import determine_target_directory
+from ...shared import (
     add_target_directory_argument,
     derive_cli_flags_from_config,
-    determine_target_directory,
     document_command_execution,
     interpret_sample_input,
 )
 
-CMD_NAME = "triangulate"
+CMD_NAME = "synthesize-uniform"
+STORAGE_FOLDERNAME = "synthesis"
 
 
 def _execute_single_sample_id(
     args: argparse.Namespace, sample_id: str, size: int
 ) -> None:
-    """Execute triangulation for a single sample ID"""
+    """Execute synthesis for a single sample ID"""
     # get resolved config
-    cmdconfig: TriangulationConfig = args.config.triangulate
+    cmdconfig: UniformSynthesisConfig = args.config.synthesize_uniform
 
-    # load voxel model from disk
-    """ 
-    OKAY I AM STOPPING HERE MID DEVELOPMENT TO GO TO BED.
-    WE NEED TO LOAD THE VOXEL MODEL FROM DISK HERE.
-    DETERMINE_TARGET_DIRECTORY MIGHT HAVE BECOME TOO RIGID USING CONFIG AND CMD_NAME.
-    IMPLEMENT IN UTILITIES.PATHS INSTEAD OF IN CONFIG (IMMUTABLE).
-
-    ALSO: UNIFORM AND TRINGULATION CORE CODE NEEDS GLUE - THERE SHOULD BE A SEPARATE WORK FUNCTION.
-          THEN SEPARATE MANIFEST FUNCTION, AND A WRAPPER TO STITCH THEM - MAYBE JUST CMD DEFINITION.
-    
-    """
-
-    # generate triangulated surface mesh
-    mesh, metadata = triangulate_voxels()
-
-    # save mesh to disk
-    target_directory = determine_target_directory(
-        args.config,
-        CMD_NAME,
+    # generate voxel model
+    voxels, metadata = generate_voxels_from_sample_id(
         sample_id,
-        args.target_dir,
+        cmdconfig.base_seed,
+        cmdconfig.resolution,
+        cmdconfig.plug_aspect,
+        cmdconfig.num_cells,
+        cmdconfig.min_radius,
+        cmdconfig.max_radius,
+        cmdconfig.min_separation,
+        cmdconfig.max_attempts,
     )
 
-    filename = "surface_mesh.stl"
+    # save voxel model to disk
+    target_directory = determine_target_directory(
+        args.config.behavior.storage_root,
+        sample_id,
+        STORAGE_FOLDERNAME,
+        args.target_dir,
+    )
+    filename = "voxels.npy"
     file_path = target_directory / filename
 
-    save_triangulated_mesh(mesh, file_path)
+    save_voxels(voxels, file_path)
 
     document_command_execution(
         args.config,
@@ -59,7 +58,7 @@ def _execute_single_sample_id(
         size,
         sample_id,
         inputs={},
-        outputs={"surface_mesh": str(file_path.expanduser().resolve())},
+        outputs={"voxel_model": str(file_path.expanduser().resolve())},
         metadata=metadata,
         status="success",
     )
@@ -73,7 +72,9 @@ def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
     size = comm.Get_size()
 
     sample_ids = interpret_sample_input(
-        args.sample_input, args.config.behavior.sample_id_digits
+        args.config.behavior.storage_root,
+        args.sample_input,
+        args.config.behavior.sample_id_digits,
     )
 
     # early exit if less samples than workers - also cathes the case of zero samples:
