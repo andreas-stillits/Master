@@ -8,7 +8,7 @@ from typing import Any
 
 from ..config.declaration import LogLevel, ProjectConfig
 from ..config.helpers import deep_update, filter_config_for_command
-from ..utilities.checks import validate_sample_id, verify_existence
+from ..utilities.checks import validate_sample_id
 from ..utilities.manifest import dump_manifest
 from ..utilities.paths import expand_inventory_path
 
