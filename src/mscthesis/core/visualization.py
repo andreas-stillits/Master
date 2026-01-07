@@ -9,26 +9,6 @@ from ..utilities.log import log_call
 
 
 @log_call()
-def load_voxels_from_npy(file_path: str | Path) -> np.ndarray:
-    """
-    Load a 3D voxel grid from a .npy file.
-    Args:
-        file_path (str | Path): Path to the .npy file containing the voxel grid.
-    Returns:
-        np.ndarray: A 3D numpy array representing the voxel grid.
-    """
-    file_path = Path(file_path)
-
-    if not file_path.is_file():
-        raise FileNotFoundError(f"The file {file_path} does not exist.")
-
-    elif not file_path.suffix == ".npy":
-        raise ValueError("The file must be a .npy file.")
-
-    return np.load(file_path)
-
-
-@log_call()
 def visualize_voxels(voxels: np.ndarray, material_id: int = 1) -> None:
     """
     Visualize a 3D voxel grid using Open3D.

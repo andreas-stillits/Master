@@ -185,9 +185,7 @@ def interpret_sample_input(
     # check if input has .txt extension
     if input.endswith(".txt"):
         # expand path
-        input = expand_inventory_path(storage_root, input)
-        # verify file existence
-        verify_existence(input)
+        input: Path = expand_inventory_path(storage_root, input)
         # read sample IDs from file
         with open(input, "r") as f:
             for line in f:

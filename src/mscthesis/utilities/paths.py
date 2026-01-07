@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable
 
 from .checks import verify_existence
 from .log import log_call
@@ -9,18 +10,44 @@ SAMPLES_FOLDERNAME: str = "samples"
 INVENTORIES_FOLDERNAME: str = "inventories"
 
 
-@log_call()
-def get_samples_path(storage_root: Path) -> Path:
+# ===== General utilities =====
+def get_path(storage_root: Path, foldername: str) -> Path:
     """
-    Get the path to the samples directory
+    Get the path to a specified folder within the storage root.
     Args:
         storage_root (Path): The root storage directory.
+        foldername (str): The folder name to retrieve the path for.
     Returns:
-        Path: The path to the samples directory.
+        Path: The path to the specified folder within the storage root.
     """
-    samples_path = storage_root / SAMPLES_FOLDERNAME
-    samples_path.mkdir(parents=True, exist_ok=True)
-    return samples_path
+    target_path = storage_root / foldername
+    target_path.mkdir(parents=True, exist_ok=True)
+    return target_path
+
+
+def resolve_storage_shorthand(
+    storage_root: Path, foldername: str, relative_path: str
+) -> Path:
+    """
+    Resolve a relative path that may use '@' shorthand to indicate the storage root.
+    Args:
+        storage_root (Path): The root storage directory.
+        relative_path (str): The relative path, potentially prefixed with '@'.
+    Returns:
+        Path: The resolved absolute path.
+    """
+    if relative_path.startswith("@"):
+        relative_path = relative_path[1:]  # remove '@' prefix
+        full_path = get_path(storage_root, foldername) / relative_path
+    else:
+        full_path = Path(relative_path)
+
+    verify_existence(full_path)
+
+    return full_path
+
+
+# =============================
 
 
 @log_call()
@@ -34,30 +61,15 @@ def expand_samples_path(storage_root: Path, relative_path: str) -> Path:
     Returns:
         full_path (Path): The derived full path.
     """
-    if relative_path.startswith("@"):
-        relative_path = relative_path[1:]  # remove '@' prefix
-        full_path = get_samples_path(storage_root) / relative_path
-    else:
-        full_path = Path(relative_path)
-    return full_path
+    return resolve_storage_shorthand(
+        storage_root,
+        SAMPLES_FOLDERNAME,
+        relative_path,
+    )
 
 
 @log_call()
-def get_inventory_path(storage_root: Path) -> Path:
-    """
-    Get the path to the inventory directory
-    Args:
-        storage_root (Path): The root storage directory.
-    Returns:
-        Path: The path to the inventory directory.
-    """
-    inventory_path = storage_root / INVENTORIES_FOLDERNAME
-    inventory_path.mkdir(parents=True, exist_ok=True)
-    return inventory_path
-
-
-@log_call()
-def expand_inventory_path(storage_root: Path, relative_path: str) -> str:
+def expand_inventory_path(storage_root: Path, relative_path: str) -> Path:
     """
     Derive full path within inventory directory given a relative path if signified by @.
     Else, return as absolute Path.
@@ -67,13 +79,11 @@ def expand_inventory_path(storage_root: Path, relative_path: str) -> str:
     Returns:
         full_path (Path): The derived full path.
     """
-    if relative_path.startswith("@"):
-        relative_path = relative_path[1:]  # remove '@' prefix
-        full_path = get_inventory_path(storage_root) / relative_path
-    else:
-        full_path = relative_path
-
-    return str(full_path)
+    return resolve_storage_shorthand(
+        storage_root,
+        INVENTORIES_FOLDERNAME,
+        relative_path,
+    )
 
 
 @log_call()
@@ -89,7 +99,7 @@ def create_target_directory(
     Returns:
         Path: The path to the created target directory.
     """
-    samples_path = get_samples_path(storage_root)
+    samples_path = get_path(storage_root, SAMPLES_FOLDERNAME)
     target_dir = samples_path / sample_id / storage_foldername
     target_dir.mkdir(parents=True, exist_ok=True)
     return target_dir

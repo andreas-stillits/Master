@@ -5,8 +5,8 @@ from pathlib import Path
 
 from mpi4py import MPI
 
-from ...core.visualization import load_voxels_from_npy, visualize_voxels
-from ...utilities.checks import verify_existence
+from ...core.io import load_voxels
+from ...core.visualization import visualize_voxels
 from ...utilities.paths import expand_samples_path
 from ..shared import derive_cli_flags_from_config
 
@@ -19,13 +19,11 @@ def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
         file_path: Path = expand_samples_path(
             args.config.behavior.storage_root, args.file_path
         )
-
-        # verify existence of file
-        verify_existence(file_path)
+        # contract: existance and validity is verified by core.io loaders
 
         # visualize based on file extension
         if file_path.suffix == ".npy":
-            voxels = load_voxels_from_npy(file_path)
+            voxels = load_voxels(file_path)
             visualize_voxels(voxels, material_id=1)
 
         else:
