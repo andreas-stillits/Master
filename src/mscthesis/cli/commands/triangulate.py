@@ -60,7 +60,6 @@ def _execute_single_sample_id(
         inputs={},
         outputs={"voxel_model": str(file_path.expanduser().resolve())},
         metadata=metadata,
-        status="success",
     )
 
     return

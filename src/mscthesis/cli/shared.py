@@ -224,7 +224,6 @@ def document_command_execution(
     inputs: dict[str, str],
     outputs: dict[str, str],
     metadata: dict[str, Any],
-    status: str,
 ) -> None:
     """
     Document the execution of a command by dumping the resolved configuration and manifest.
@@ -251,7 +250,6 @@ def document_command_execution(
             inputs,
             outputs,
             metadata,
-            status,
             config.meta.project_version,
         )
     return

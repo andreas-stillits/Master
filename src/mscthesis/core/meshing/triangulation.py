@@ -36,7 +36,7 @@ def _metadata(
     pre_volume: float,
     post_volume: float,
     shrinkage_tolerance: float,
-    status: str,
+    success: bool,
 ) -> dict[str, Any]:
     """
     Create metadata dictionary for the triangulated mesh.
@@ -72,7 +72,7 @@ def _metadata(
         "post_volume": post_volume,
         "volume_shrinkage": volume_shrinkage,
         "shrinkage_acceptable": shrinkage_acceptable,
-        "status": status,
+        "success": success,
     }
 
 
@@ -130,11 +130,7 @@ def triangulate_voxels(
     is_vertex_manifold = mesh.is_vertex_manifold()
     is_watertight = mesh.is_watertight()
 
-    status = (
-        "success"
-        if (is_edge_manifold and is_vertex_manifold and is_watertight)
-        else "failure"
-    )
+    success = is_edge_manifold and is_vertex_manifold and is_watertight
 
     metadata = _metadata(
         mesh,
@@ -143,7 +139,7 @@ def triangulate_voxels(
         pre_volume,
         post_volume,
         shrinkage_tolerance,
-        status,
+        success,
     )
 
     return mesh, metadata

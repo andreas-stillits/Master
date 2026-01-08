@@ -40,11 +40,18 @@ def verify_existence(path: str | Path) -> None:
     Args:
         path (str | Path): The path to verify.
     Raises:
+        ValueError: If the path is not mappable to Path.
         FileNotFoundError: If the path does not exist.
     """
-    path = Path(path)
+    try:
+        path = Path(path)
+    except Exception as err:
+        raise ValueError(
+            f"The provided file path '{path}' is not mappable to Path."
+        ) from err
+
     if not path.exists():
-        raise FileNotFoundError(f"The path '{path}' does not exist.")
+        raise FileNotFoundError(f"The provided file path '{path}' does not exist.")
     return
 
 
@@ -58,7 +65,13 @@ def verify_extension(file_path: str | Path, *valid_extensions: str) -> None:
     Raises:
         ValueError: If the file does not have a valid extension.
     """
-    file_path = Path(file_path)
+    try:
+        file_path = Path(file_path)
+    except Exception as err:
+        raise ValueError(
+            f"The provided file path '{file_path}' is not mappable to Path."
+        ) from err
+
     if file_path.suffix.lower() not in valid_extensions:
         raise ValueError(
             f"The file '{file_path}' does not have a valid extension. "

@@ -42,7 +42,7 @@ def _metadata(
     metadata["std_porosity"] = float(
         np.std(1.0 - np.sum(voxels, axis=(0, 1)) / (voxels.shape[0] * voxels.shape[1]))
     )
-    metadata["status"] = "success"
+    metadata["success"] = True
     return metadata
 
 

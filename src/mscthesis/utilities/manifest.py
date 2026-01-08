@@ -18,7 +18,6 @@ def dump_manifest(
     inputs: dict[str, Any],
     outputs: dict[str, Any],
     metadata: dict[str, Any],
-    status: str,
     tool_version: str,
 ) -> None:
     """
@@ -42,7 +41,6 @@ def dump_manifest(
     manifest["inputs"] = inputs
     manifest["outputs"] = outputs
     manifest["meta"] = metadata
-    manifest["status"] = status
     try:
         git_commit = (
             subprocess.check_output(["git", "rev-parse", "HEAD"])

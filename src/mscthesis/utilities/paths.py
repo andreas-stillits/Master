@@ -109,10 +109,11 @@ def determine_target_directory(
     storage_root: Path,
     sample_id: str,
     storage_foldername: str,
-    target_dir: str | None = None,
+    override_target_dir: str | None = None,
 ) -> Path:
     """
     Determine the target directory for saving output files.
+    Either under sample_id in storage root, or an override provided via CLI argument.
     Args:
         storage_root (Path): The root storage directory.
         sample_id (str): The sample ID for which the target directory is being determined.
@@ -129,10 +130,10 @@ def determine_target_directory(
             sample_id,
             storage_foldername,
         )
-        if target_dir is None
-        else Path(target_dir)
+        if override_target_dir is None
+        else override_target_dir
     )
 
     verify_existence(target_directory)
 
-    return target_directory
+    return Path(target_directory)
