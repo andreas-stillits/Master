@@ -9,7 +9,6 @@ from ...core.io import load_voxels, save_surface_mesh
 from ...core.meshing.triangulation import triangulate_voxels
 from ...utilities.paths import Paths
 from ..shared import (
-    add_target_directory_argument,
     derive_cli_flags_from_config,
     document_command_execution,
     interpret_sample_input,
@@ -99,6 +98,5 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         type=str,
         help="Either a valid sample ID or path to a text file containing sample IDs (one per line)",
     )
-    add_target_directory_argument(parser)
     parser = derive_cli_flags_from_config(parser, CMD_NAME)
     parser.set_defaults(cmd=_cmd)

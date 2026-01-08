@@ -1,3 +1,33 @@
+"""
+Cheat sheet
+
+Initialize:
+
+    paths = Paths(config.behavior.storage_root)
+    paths.require_base()
+    paths.ensure_samples_root()
+    paths.ensure_inventories_root()
+
+Read from sample id:
+
+    input_path = paths.sample("00001").synthesis().require_voxels() # -> storage_root/samples/00001/synthesis/voxels.npy
+    # verifies existence and extension
+
+Read from relative path with '@' shorthand:
+    input_path = resolve_existing_samples_file(paths, input, ".npy")
+    # -> storage_root/samples/input (if input starts with '@')
+    # -> input (if input is absolute path)
+    # verifies existence and extension
+
+Write from sample id:
+    synthesis = paths.sample("00001").synthesis()
+    synthesis.ensure_dir() # create sample dir and synthesis dir if missing
+    voxels_path = synthesis.voxels --> storage_root/samples/00001/synthesis/voxels.npy
+    # Write to voxels_path
+
+
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -93,7 +123,7 @@ def resolve_samples_shorthand(paths: Paths, relative_path: str) -> Path:
     if relative_path.startswith("@"):
         rel = relative_path[1:].lstrip(
             "/\\"
-        )  # remove '@' prefix, leading slashes to avoid absolute path interpretation
+        )  # remove '@' prefix and leading slashes to avoid absolute path interpretation
         # dont allow escaping via ".."
         path = (paths.samples / rel).resolve()
         root = paths.samples.resolve()
