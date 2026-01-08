@@ -5,8 +5,8 @@ from pathlib import Path
 
 from mpi4py import MPI
 
-from ...core.io import load_voxels
-from ...core.visualization import visualize_voxels
+from ...core.io import load_voxels, load_surface_mesh
+from ...core.visualization import visualize_voxels, visualize_surface_mesh
 from ...utilities.paths import expand_samples_path
 from ..shared import derive_cli_flags_from_config
 
@@ -25,6 +25,10 @@ def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
         if file_path.suffix == ".npy":
             voxels = load_voxels(file_path)
             visualize_voxels(voxels, material_id=1)
+
+        elif file_path.suffix == ".stl":
+            mesh = load_surface_mesh(file_path)
+            visualize_surface_mesh(mesh)
 
         else:
             raise ValueError(
