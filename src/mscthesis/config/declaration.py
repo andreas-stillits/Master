@@ -40,7 +40,7 @@ class MetaConfig(BaseModel):
 
     project_name: str = "mscthesis"
     project_version: str = "0.1.0"
-    config_name: str = "config.json"
+    config_name: str = "config.json"  # bound in utilities.paths as well
     user_config_path: Path = Path.home() / f".{project_name}" / config_name
     project_config_path: Path = Path.cwd() / config_name
     # magic strings and numbers -- underscores are to avoid name collision with internal logging fields

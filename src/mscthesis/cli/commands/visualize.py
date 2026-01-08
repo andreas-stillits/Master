@@ -7,7 +7,7 @@ from mpi4py import MPI
 
 from ...core.io import load_surface_mesh, load_voxels
 from ...core.visualization import visualize_surface_mesh, visualize_voxels
-from ...utilities.paths import expand_samples_path
+from ...utilities.paths import Paths, resolve_existing_samples_file
 from ..shared import derive_cli_flags_from_config
 
 
@@ -15,11 +15,14 @@ def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
     """Command to visualize the contents of a file via file extension"""
     rank = comm.Get_rank()
 
+    paths: Paths = Paths(args.config.behavior.storage_root)
+    paths.require_base()
+    paths.ensure_samples_root()
+
     if rank == 0:
-        file_path: Path = expand_samples_path(
-            args.config.behavior.storage_root, args.file_path
+        file_path: Path = resolve_existing_samples_file(
+            paths, args.file_path, ".npy", ".stl"
         )
-        # contract: existance and validity is verified by core.io loaders
 
         # visualize based on file extension
         if file_path.suffix == ".npy":

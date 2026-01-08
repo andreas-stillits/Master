@@ -4,12 +4,11 @@ import argparse
 
 from mpi4py import MPI
 
-from ....config.declaration import UniformSynthesisConfig
+from ....config.declaration import ProjectConfig, UniformSynthesisConfig
 from ....core.io import save_voxels
 from ....core.synthesis.uniform import generate_voxels_from_sample_id
-from ....utilities.paths import determine_target_directory
+from ....utilities.paths import Paths
 from ...shared import (
-    add_target_directory_argument,
     derive_cli_flags_from_config,
     document_command_execution,
     interpret_sample_input,
@@ -20,11 +19,11 @@ STORAGE_FOLDERNAME = "synthesis"
 
 
 def _execute_single_sample_id(
-    args: argparse.Namespace, sample_id: str, size: int
+    paths: Paths, config: ProjectConfig, sample_id: str, size: int
 ) -> None:
-    """Execute synthesis for a single sample ID"""
+    """Execute process for a single sample ID"""
     # get resolved config
-    cmdconfig: UniformSynthesisConfig = args.config.synthesize_uniform
+    cmdconfig: UniformSynthesisConfig = config.synthesize_uniform
 
     # generate voxel model
     voxels, metadata = generate_voxels_from_sample_id(
@@ -38,27 +37,23 @@ def _execute_single_sample_id(
         cmdconfig.min_separation,
         cmdconfig.max_attempts,
     )
+    sample_path = paths.sample(sample_id)
+    sample_path.ensure_dir()
 
-    # save voxel model to disk
-    target_directory = determine_target_directory(
-        args.config.behavior.storage_root,
-        sample_id,
-        STORAGE_FOLDERNAME,
-        args.target_dir,
-    )
-    filename = "voxels.npy"
-    file_path = target_directory / filename
+    process_paths = sample_path.synthesis()
+    process_paths.ensure_dir()
+    voxels_path = process_paths.voxels
 
-    save_voxels(voxels, file_path)
+    save_voxels(voxels, voxels_path)
 
     document_command_execution(
-        args.config,
-        target_directory,
+        process_paths,
+        config,
         CMD_NAME,
         size,
         sample_id,
         inputs={},
-        outputs={"voxel_model": str(file_path.expanduser().resolve())},
+        outputs={"voxel_model": str(voxels_path.expanduser().resolve())},
         metadata=metadata,
     )
 
@@ -66,24 +61,29 @@ def _execute_single_sample_id(
 
 
 def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
-    """Command to generate a uniform swiss cheese voxel model"""
+    """Command declaration"""
     rank = comm.Get_rank()
     size = comm.Get_size()
 
+    paths: Paths = Paths(args.config.behavior.storage_root)
+    paths.require_base()
+    paths.ensure_samples_root()
+    paths.ensure_inventories_root()
+
     sample_ids = interpret_sample_input(
-        args.config.behavior.storage_root,
+        paths,
         args.sample_input,
         args.config.behavior.sample_id_digits,
     )
 
     # early exit if less samples than workers - also cathes the case of zero samples:
-    if rank > len(sample_ids) or len(sample_ids) == 0:
+    if rank >= len(sample_ids) or len(sample_ids) == 0:
         return
 
     # distribute sample IDs among workers
     assigned_sample_ids = sample_ids[rank::size]
     for sample_id in assigned_sample_ids:
-        _execute_single_sample_id(args, sample_id, size)
+        _execute_single_sample_id(paths, args.config, sample_id, size)
 
     return
 
@@ -102,6 +102,5 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         type=str,
         help="Either a valid sample ID or path to a text file containing sample IDs (one per line)",
     )
-    add_target_directory_argument(parser)
     parser = derive_cli_flags_from_config(parser, CMD_NAME)
     parser.set_defaults(cmd=_cmd)

@@ -8,9 +8,9 @@ from typing import Any
 
 from ..config.declaration import LogLevel, ProjectConfig
 from ..config.helpers import deep_update, filter_config_for_command
-from ..utilities.checks import validate_sample_id
+from ..utilities.ids import validate_sample_id
 from ..utilities.manifest import dump_manifest
-from ..utilities.paths import expand_inventory_path
+from ..utilities.paths import Paths, ProcessPathsBase, resolve_existing_inventories_file
 
 
 def initialize_parsers(
@@ -169,9 +169,7 @@ def add_target_directory_argument(parser: argparse.ArgumentParser) -> None:
     return
 
 
-def interpret_sample_input(
-    storage_root: Path, input: str, required_digits: int
-) -> list[str]:
+def interpret_sample_input(paths: Paths, input: str, required_digits: int) -> list[str]:
     """
     Interpret the sample input argument and return a list of sample IDs
     Args:
@@ -182,10 +180,10 @@ def interpret_sample_input(
         list[str]: A list of valid sample IDs.
     """
     sample_ids: list[str] = []
-    # check if input has .txt extension
-    if input.endswith(".txt"):
+    # check if input has .txt extension or begins with "@"
+    if input.startswith("@") or input.endswith(".txt"):
         # expand path
-        input_path = expand_inventory_path(storage_root, input)
+        input_path = resolve_existing_inventories_file(paths, input, ".txt")
         # read sample IDs from file
         with open(input_path, "r") as f:
             for line in f:
@@ -193,31 +191,31 @@ def interpret_sample_input(
                 if sample_id and validate_sample_id(sample_id, required_digits):
                     sample_ids.append(sample_id)
     else:
-        # single sample ID provided
-        if validate_sample_id(input, required_digits):
-            sample_ids.append(input)
+        # treat input as single sample ID
+        sample_id = input.strip()
+        if validate_sample_id(sample_id, required_digits):
+            sample_ids.append(sample_id)
     return sample_ids
 
 
 def dump_resolved_command_config(
-    config: ProjectConfig, command: str, target_directory: Path
+    config: ProjectConfig, command: str, target_path: Path
 ) -> None:
     """
     Dump the resolved configuration for the given command to a file.
     Args:
         config (ProjectConfig): The resolved project configuration.
         command (str): The command name whose relevant configuration to dump.
-        target_directory (Path): The directory where the configuration file will be saved.
+        target_path (Path): The path where the configuration file will be saved.
     """
     command_config = filter_config_for_command(config, command)
-    target_path = target_directory / config.meta.config_name
     target_path.write_text(json.dumps(command_config, indent=2, default=str))
     return
 
 
 def document_command_execution(
+    process_paths: ProcessPathsBase,
     config: ProjectConfig,
-    target_directory: Path,
     command_name: str,
     num_processes: int,
     sample_id: str,
@@ -229,7 +227,7 @@ def document_command_execution(
     Document the execution of a command by dumping the resolved configuration and manifest.
     Args:
         args (argparse.Namespace): The parsed CLI arguments.
-        target_directory (Path): The directory where documentation files will be saved.
+        process_paths (ProcessPathsBase): The process paths where documentation files will be saved.
         command_name (str): The name of the executed command.
         inputs (dict[str, str]): A dictionary of input file paths.
         outputs (dict[str, str]): A dictionary of output file paths.
@@ -238,12 +236,12 @@ def document_command_execution(
     """
     # optionally dump resolved command-relevant config
     if not config.behavior.no_cmdconfig:
-        dump_resolved_command_config(config, command_name, target_directory)
+        dump_resolved_command_config(config, command_name, process_paths.config)
 
     # optionally dump manifest
     if not config.behavior.no_manifest:
         dump_manifest(
-            target_directory,
+            process_paths.manifest,
             command_name,
             num_processes,
             sample_id,

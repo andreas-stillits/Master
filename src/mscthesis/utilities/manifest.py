@@ -11,7 +11,7 @@ from .log import log_call
 
 @log_call()
 def dump_manifest(
-    target_directory: Path,
+    target_path: Path,
     command_name: str,
     num_processes: int,
     sample_id: str,
@@ -23,7 +23,7 @@ def dump_manifest(
     """
     Dump a manifest JSON file summarizing the command execution and output contents.
     Args:
-        target_directory (Path): Directory where the manifest file will be saved.
+        target_path (Path): Path where the manifest file will be saved.
         command_name (str): Name of the command executed.
         sample_id (str): Identifier for the generated sample.
         inputs (dict[str, Any]): Dictionary of input file paths used.
@@ -32,7 +32,6 @@ def dump_manifest(
         success (bool): Status of the command execution.
         tool_version (str): Version of the tool used.
     """
-    manifest_path = target_directory / "manifest.json"
     manifest: dict[str, Any] = {}
     manifest["execution_time"] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     manifest["command"] = command_name
@@ -52,7 +51,7 @@ def dump_manifest(
     manifest["git_commit"] = git_commit
     manifest["tool"] = f"mscthesis version {tool_version}"
 
-    with open(manifest_path, "w") as manifest_file:
+    with open(target_path, "w") as manifest_file:
         json.dump(manifest, manifest_file, indent=2, default=str)
 
     return

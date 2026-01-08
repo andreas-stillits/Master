@@ -4,10 +4,10 @@ import argparse
 
 from mpi4py import MPI
 
-from ...config.declaration import TriangulationConfig
+from ...config.declaration import ProjectConfig, TriangulationConfig
 from ...core.io import load_voxels, save_surface_mesh
 from ...core.meshing.triangulation import triangulate_voxels
-from ...utilities.paths import determine_target_directory, get_voxel_file_path
+from ...utilities.paths import Paths
 from ..shared import (
     add_target_directory_argument,
     derive_cli_flags_from_config,
@@ -20,19 +20,16 @@ STORAGE_FOLDERNAME = "triangulation"
 
 
 def _execute_single_sample_id(
-    args: argparse.Namespace, sample_id: str, size: int
+    paths: Paths, config: ProjectConfig, sample_id: str, size: int
 ) -> None:
-    """Execute synthesis for a single sample ID"""
+    """Execute process for a single sample ID"""
     # get resolved config
-    cmdconfig: TriangulationConfig = args.config.triangulate
+    cmdconfig: TriangulationConfig = config.triangulate
 
-    voxel_input_path = get_voxel_file_path(
-        args.config.behavior.storage_root,
-        sample_id,
-    )
-    voxels = load_voxels(voxel_input_path)
+    voxels_path = paths.sample(sample_id).synthesis().require_voxels()
+    voxels = load_voxels(voxels_path)
 
-    # generate voxel model
+    # generate surface mesh
     surface_mesh, metadata = triangulate_voxels(
         voxels,
         cmdconfig.smoothing_iterations,
@@ -40,26 +37,20 @@ def _execute_single_sample_id(
         cmdconfig.shrinkage_tolerance,
     )
 
-    # save voxel model to disk
-    target_directory = determine_target_directory(
-        args.config.behavior.storage_root,
-        sample_id,
-        STORAGE_FOLDERNAME,
-        args.target_dir,
-    )
-    filename = "surface_mesh.stl"
-    file_path = target_directory / filename
+    output_paths = paths.sample(sample_id).triangulation()
+    output_paths.ensure_dir()
+    surface_mesh_path = output_paths.mesh
 
-    save_surface_mesh(surface_mesh, file_path)
+    save_surface_mesh(surface_mesh, surface_mesh_path)
 
     document_command_execution(
-        args.config,
-        target_directory,
+        output_paths,
+        config,
         CMD_NAME,
         size,
         sample_id,
-        inputs={"voxel_model": str(voxel_input_path.expanduser().resolve())},
-        outputs={"surface_mesh": str(file_path.expanduser().resolve())},
+        inputs={"voxel_model": str(voxels_path.expanduser().resolve())},
+        outputs={"surface_mesh": str(surface_mesh_path.expanduser().resolve())},
         metadata=metadata,
     )
 
@@ -67,24 +58,29 @@ def _execute_single_sample_id(
 
 
 def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
-    """Command to generate a surface mesh from a voxel model using marching cubes"""
+    """Command declaration"""
     rank = comm.Get_rank()
     size = comm.Get_size()
 
+    paths: Paths = Paths(args.config.behavior.storage_root)
+    paths.require_base()
+    paths.ensure_samples_root()
+    paths.ensure_inventories_root()
+
     sample_ids = interpret_sample_input(
-        args.config.behavior.storage_root,
+        paths,
         args.sample_input,
         args.config.behavior.sample_id_digits,
     )
 
     # early exit if less samples than workers - also cathes the case of zero samples:
-    if rank > len(sample_ids) or len(sample_ids) == 0:
+    if rank >= len(sample_ids) or len(sample_ids) == 0:
         return
 
     # distribute sample IDs among workers
     assigned_sample_ids = sample_ids[rank::size]
     for sample_id in assigned_sample_ids:
-        _execute_single_sample_id(args, sample_id, size)
+        _execute_single_sample_id(paths, args.config, sample_id, size)
 
     return
 
