@@ -137,3 +137,24 @@ def determine_target_directory(
     verify_existence(target_directory)
 
     return Path(target_directory)
+
+
+@log_call()
+def get_voxel_file_path(storage_root: Path, sample_id: str) -> Path:
+    """
+    Get the file path for the voxel data of a given sample ID.
+    Args:
+        storage_root (Path): The root storage directory.
+        sample_id (str): The unique identifier for the sample.
+    Returns:
+        Path: The path to the voxel data file for the specified sample ID.
+    """
+    voxel_directory = determine_target_directory(
+        storage_root,
+        sample_id,
+        "synthesis",
+    )
+    voxel_file_path = voxel_directory / "voxels.npy"
+    verify_existence(voxel_file_path)
+
+    return voxel_file_path

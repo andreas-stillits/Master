@@ -4,19 +4,19 @@ import argparse
 
 from mpi4py import MPI
 
-from ....config.declaration import UniformSynthesisConfig
-from ....core.io import save_voxels
-from ....core.synthesis.uniform import generate_voxels_from_sample_id
-from ....utilities.paths import determine_target_directory
-from ...shared import (
+from ...config.declaration import TriangulationConfig
+from ...core.io import load_voxels, save_surface_mesh
+from ...core.meshing.triangulation import triangulate_voxels
+from ...utilities.paths import determine_target_directory, get_voxel_file_path
+from ..shared import (
     add_target_directory_argument,
     derive_cli_flags_from_config,
     document_command_execution,
     interpret_sample_input,
 )
 
-CMD_NAME = "synthesize-uniform"
-STORAGE_FOLDERNAME = "synthesis"
+CMD_NAME = "triangulate"
+STORAGE_FOLDERNAME = "triangulation"
 
 
 def _execute_single_sample_id(
@@ -24,19 +24,20 @@ def _execute_single_sample_id(
 ) -> None:
     """Execute synthesis for a single sample ID"""
     # get resolved config
-    cmdconfig: UniformSynthesisConfig = args.config.synthesize_uniform
+    cmdconfig: TriangulationConfig = args.config.triangulate
+
+    voxel_input_path = get_voxel_file_path(
+        args.config.behavior.storage_root,
+        sample_id,
+    )
+    voxels = load_voxels(voxel_input_path)
 
     # generate voxel model
-    voxels, metadata = generate_voxels_from_sample_id(
-        sample_id,
-        cmdconfig.base_seed,
-        cmdconfig.resolution,
-        cmdconfig.plug_aspect,
-        cmdconfig.num_cells,
-        cmdconfig.min_radius,
-        cmdconfig.max_radius,
-        cmdconfig.min_separation,
-        cmdconfig.max_attempts,
+    surface_mesh, metadata = triangulate_voxels(
+        voxels,
+        cmdconfig.smoothing_iterations,
+        cmdconfig.decimation_target,
+        cmdconfig.shrinkage_tolerance,
     )
 
     # save voxel model to disk
@@ -46,10 +47,10 @@ def _execute_single_sample_id(
         STORAGE_FOLDERNAME,
         args.target_dir,
     )
-    filename = "voxels.npy"
+    filename = "surface_mesh.stl"
     file_path = target_directory / filename
 
-    save_voxels(voxels, file_path)
+    save_surface_mesh(surface_mesh, file_path)
 
     document_command_execution(
         args.config,
@@ -57,8 +58,8 @@ def _execute_single_sample_id(
         CMD_NAME,
         size,
         sample_id,
-        inputs={},
-        outputs={"voxel_model": str(file_path.expanduser().resolve())},
+        inputs={"voxel_model": str(voxel_input_path.expanduser().resolve())},
+        outputs={"surface_mesh": str(file_path.expanduser().resolve())},
         metadata=metadata,
     )
 
@@ -66,7 +67,7 @@ def _execute_single_sample_id(
 
 
 def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
-    """Command to generate a uniform swiss cheese voxel model"""
+    """Command to generate a surface mesh from a voxel model using marching cubes"""
     rank = comm.Get_rank()
     size = comm.Get_size()
 
@@ -89,12 +90,12 @@ def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Register the synthesize uniform voxel model command to a subparser"""
+    """Register the command to a subparser"""
     # declare command name - must match name of its configs attribute in ProjectConfig
     parser = subparsers.add_parser(
         CMD_NAME,
-        description="generate a uniform swiss cheese voxel model",
-        help="generate a uniform swiss cheese voxel model",
+        description="generate a surface mesh from a voxel model using marching cubes",
+        help="generate a surface mesh from a voxel model using marching cubes",
         epilog=f"msc {CMD_NAME} [options] <sample_id>",
     )
     parser.add_argument(

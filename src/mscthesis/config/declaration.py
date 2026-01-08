@@ -115,24 +115,23 @@ class UniformSynthesisConfig(BaseModel):
     }
 
 
-# class TriangulationConfig(BaseModel):
-#     """Configuration for triangulation related settings"""
+class TriangulationConfig(BaseModel):
+    """Configuration for triangulation related settings"""
 
-#     model_config = ConfigDict(
-#         extra="forbid",
-#         json_schema_extra={"expose": True, "commands": ["triangulate"]},
-#     )
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"expose": True, "commands": ["triangulate"]},
+    )
 
-#     smoothing_iterations: int = 15
-#     decimation_target: int = 10_000
-#     shrinkage_tolerance: float = 0.10
-#     storage_foldername: str = "triangulation"
+    smoothing_iterations: int = 15
+    decimation_target: int = 10_000
+    shrinkage_tolerance: float = 0.10
 
-#     cli_hints: ClassVar[dict[str, str]] = {
-#         "smoothing_iterations": "Number of smoothing iterations to apply to the mesh",
-#         "decimation_target": "Target number of faces after decimation",
-#         "shrinkage_tolerance": "Maximum acceptable shrinkage ratio for area and volume",
-#     }
+    cli_hints: ClassVar[dict[str, str]] = {
+        "smoothing_iterations": "Number of smoothing iterations to apply to the mesh",
+        "decimation_target": "Target number of faces after decimation",
+        "shrinkage_tolerance": "Maximum acceptable shrinkage ratio for area and volume",
+    }
 
 
 # Declaration of the umbrella config object
@@ -142,7 +141,7 @@ class ProjectConfig(BaseModel):
     meta: MetaConfig = MetaConfig()
     behavior: BehaviorConfig = BehaviorConfig()
     synthesize_uniform: UniformSynthesisConfig = UniformSynthesisConfig()
-    # triangulate: TriangulationConfig = TriangulationConfig()
+    triangulate: TriangulationConfig = TriangulationConfig()
 
     # helper function for filtering after model_config.json_schema_extra.expose
     def _filter_config_for_exposure(self) -> dict[str, Any]:
