@@ -185,9 +185,9 @@ def interpret_sample_input(
     # check if input has .txt extension
     if input.endswith(".txt"):
         # expand path
-        input: Path = expand_inventory_path(storage_root, input)
+        input_path = expand_inventory_path(storage_root, input)
         # read sample IDs from file
-        with open(input, "r") as f:
+        with open(input_path, "r") as f:
             for line in f:
                 sample_id = line.strip()
                 if sample_id and validate_sample_id(sample_id, required_digits):

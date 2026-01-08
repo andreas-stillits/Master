@@ -5,8 +5,8 @@ from pathlib import Path
 
 from mpi4py import MPI
 
-from ...core.io import load_voxels, load_surface_mesh
-from ...core.visualization import visualize_voxels, visualize_surface_mesh
+from ...core.io import load_surface_mesh, load_voxels
+from ...core.visualization import visualize_surface_mesh, visualize_voxels
 from ...utilities.paths import expand_samples_path
 from ..shared import derive_cli_flags_from_config
 
