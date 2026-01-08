@@ -15,7 +15,7 @@
     "plug_aspect": 0.3,
     "num_cells": 100,
     "min_radius": 0.05,
-    "max_radius": 0.15,
+    "max_radius": 0.1,
     "min_separation": 0.01,
     "max_attempts": 1000
   }
