@@ -10,8 +10,8 @@ from ....core.synthesis.uniform import generate_voxels_from_sample_id
 from ....utilities.paths import ProjectPaths
 from ...shared import (
     derive_cli_flags_from_config,
+    distribute_command_execution,
     document_command_execution,
-    interpret_sample_input,
 )
 
 CMD_NAME = "synthesize-uniform"
@@ -59,30 +59,7 @@ def _execute_single_sample_id(
 
 def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
     """Command declaration"""
-    rank = comm.Get_rank()
-    size = comm.Get_size()
-
-    paths: ProjectPaths = ProjectPaths(args.config.behavior.storage_root)
-    paths.require_base()
-    paths.ensure_samples_root()
-    paths.ensure_inventories_root()
-
-    sample_ids = interpret_sample_input(
-        paths,
-        args.sample_input,
-        args.config.behavior.sample_id_digits,
-    )
-
-    # early exit if less samples than workers - also cathes the case of zero samples:
-    if rank >= len(sample_ids) or len(sample_ids) == 0:
-        return
-
-    # distribute sample IDs among workers
-    assigned_sample_ids = sample_ids[rank::size]
-    for sample_id in assigned_sample_ids:
-        _execute_single_sample_id(paths, args.config, sample_id, size)
-
-    return
+    return distribute_command_execution(args, comm, _execute_single_sample_id)
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:

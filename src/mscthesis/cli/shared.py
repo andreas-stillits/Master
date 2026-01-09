@@ -4,7 +4,10 @@ import argparse
 import ast
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
+
+from mpi4py import MPI
+from tqdm import tqdm
 
 from ..config.declaration import LogLevel, ProjectConfig
 from ..config.helpers import deep_update, filter_config_for_command
@@ -154,6 +157,40 @@ def parse_string_value(raw: str) -> Any:
     except (ValueError, SyntaxError):
         value = raw
     return value
+
+
+def distribute_command_execution(
+    args: argparse.Namespace, comm: MPI.Intracomm, execute_single_sample_id: Callable
+) -> None:
+    """Command declaration"""
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    paths: ProjectPaths = ProjectPaths(args.config.behavior.storage_root)
+    paths.require_base()
+    paths.ensure_samples_root()
+    paths.ensure_inventories_root()
+
+    sample_ids = interpret_sample_input(
+        paths,
+        args.sample_input,
+        args.config.behavior.sample_id_digits,
+    )
+
+    # early exit if less samples than workers - also cathes the case of zero samples:
+    if rank >= len(sample_ids) or len(sample_ids) == 0:
+        return
+
+    # distribute sample IDs among workers
+    assigned_sample_ids = sample_ids[rank::size]
+    if rank == 0 and size > 1:
+        for sample_id in tqdm(assigned_sample_ids, desc="processing samples..."):
+            execute_single_sample_id(paths, args.config, sample_id, size)
+    else:
+        for sample_id in assigned_sample_ids:
+            execute_single_sample_id(paths, args.config, sample_id, size)
+
+    return
 
 
 def interpret_sample_input(
