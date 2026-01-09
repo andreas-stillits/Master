@@ -7,7 +7,7 @@ from mpi4py import MPI
 
 from ...core.io import load_surface_mesh, load_voxels
 from ...core.visualization import visualize_surface_mesh, visualize_voxels
-from ...utilities.paths import Paths, resolve_existing_samples_file
+from ...utilities.paths import ProjectPaths, resolve_existing_samples_file
 from ..shared import derive_cli_flags_from_config
 
 
@@ -15,7 +15,7 @@ def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
     """Command to visualize the contents of a file via file extension"""
     rank = comm.Get_rank()
 
-    paths: Paths = Paths(args.config.behavior.storage_root)
+    paths: ProjectPaths = ProjectPaths(args.config.behavior.storage_root)
     paths.require_base()
     paths.ensure_samples_root()
 

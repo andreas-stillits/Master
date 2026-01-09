@@ -7,7 +7,7 @@ from mpi4py import MPI
 from ...config.declaration import ProjectConfig, TriangulationConfig
 from ...core.io import load_voxels, save_surface_mesh
 from ...core.meshing.triangulation import triangulate_voxels
-from ...utilities.paths import Paths
+from ...utilities.paths import ProjectPaths
 from ..shared import (
     derive_cli_flags_from_config,
     document_command_execution,
@@ -15,11 +15,10 @@ from ..shared import (
 )
 
 CMD_NAME = "triangulate"
-STORAGE_FOLDERNAME = "triangulation"
 
 
 def _execute_single_sample_id(
-    paths: Paths, config: ProjectConfig, sample_id: str, size: int
+    paths: ProjectPaths, config: ProjectConfig, sample_id: str, size: int
 ) -> None:
     """Execute process for a single sample ID"""
     # get resolved config
@@ -61,7 +60,7 @@ def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    paths: Paths = Paths(args.config.behavior.storage_root)
+    paths: ProjectPaths = ProjectPaths(args.config.behavior.storage_root)
     paths.require_base()
     paths.ensure_samples_root()
     paths.ensure_inventories_root()

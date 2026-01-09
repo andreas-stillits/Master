@@ -109,13 +109,13 @@ def ensure_dir(path: Path) -> Path:
 # ===== shorthand @ helpers =====
 
 
-def resolve_samples_shorthand(paths: Paths, relative_path: str) -> Path:
+def resolve_samples_shorthand(paths: ProjectPaths, relative_path: str) -> Path:
     """
     Helper to resolve relative paths using '@' shorthand for samples root.
     If relative_path starts with '@', it is resolved relative to samples root.
     Otherwise, it is treated as an absolute path.
     Args:
-        paths (Paths): The Paths dataclass instance containing root paths.
+        paths (ProjectPaths): The ProjectPaths dataclass instance containing root paths.
         relative_path (str): The relative path, potentially prefixed with '@'.
     Returns:
         Path: The resolved absolute path.
@@ -137,13 +137,13 @@ def resolve_samples_shorthand(paths: Paths, relative_path: str) -> Path:
 
 
 def resolve_existing_samples_file(
-    paths: Paths, relative_path: str, *valid_extensions: str
+    paths: ProjectPaths, relative_path: str, *valid_extensions: str
 ) -> Path:
     """
     Resolve a relative path that may use '@' shorthand to indicate the samples root,
     and ensure it exists as a file with a valid extension.
     Args:
-        paths (Paths): The Paths dataclass instance containing root paths.
+        paths (ProjectPaths): The ProjectPaths dataclass instance containing root paths.
         relative_path (str): The relative path, potentially prefixed with '@'.
         valid_extensions (str): Valid file extensions (e.g., '.txt', '.json').
     Returns:
@@ -155,13 +155,13 @@ def resolve_existing_samples_file(
     return path
 
 
-def resolve_inventories_shorthand(paths: Paths, relative_path: str) -> Path:
+def resolve_inventories_shorthand(paths: ProjectPaths, relative_path: str) -> Path:
     """
     Helper to resolve relative paths using '@' shorthand for inventories root.
     If relative_path starts with '@', it is resolved relative to inventories root.
     Otherwise, it is treated as an absolute path.
     Args:
-        paths (Paths): The Paths dataclass instance containing root paths.
+        paths (ProjectPaths): The ProjectPaths dataclass instance containing root paths.
         relative_path (str): The relative path, potentially prefixed with '@'.
     Returns:
         Path: The resolved absolute path.
@@ -183,13 +183,13 @@ def resolve_inventories_shorthand(paths: Paths, relative_path: str) -> Path:
 
 
 def resolve_existing_inventories_file(
-    paths: Paths, relative_path: str, *valid_extensions: str
+    paths: ProjectPaths, relative_path: str, *valid_extensions: str
 ) -> Path:
     """
     Resolve a relative path that may use '@' shorthand to indicate the inventories root,
     and ensure it exists as a file with a valid extension.
     Args:
-        paths (Paths): The Paths dataclass instance containing root paths.
+        paths (ProjectPaths): The ProjectPaths dataclass instance containing root paths.
         relative_path (str): The relative path, potentially prefixed with '@'.
         valid_extensions (str): Valid file extensions (e.g., '.txt', '.json').
     Returns:
@@ -205,7 +205,7 @@ def resolve_existing_inventories_file(
 
 
 @dataclass(frozen=True)
-class Paths:
+class ProjectPaths:
     base: Path
 
     @property
@@ -234,7 +234,7 @@ class Paths:
 
 @dataclass(frozen=True)
 class SamplePaths:
-    paths: Paths
+    paths: ProjectPaths
     sample_id: str
 
     @property

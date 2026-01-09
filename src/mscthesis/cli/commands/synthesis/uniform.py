@@ -7,7 +7,7 @@ from mpi4py import MPI
 from ....config.declaration import ProjectConfig, UniformSynthesisConfig
 from ....core.io import save_voxels
 from ....core.synthesis.uniform import generate_voxels_from_sample_id
-from ....utilities.paths import Paths
+from ....utilities.paths import ProjectPaths
 from ...shared import (
     derive_cli_flags_from_config,
     document_command_execution,
@@ -15,11 +15,10 @@ from ...shared import (
 )
 
 CMD_NAME = "synthesize-uniform"
-STORAGE_FOLDERNAME = "synthesis"
 
 
 def _execute_single_sample_id(
-    paths: Paths, config: ProjectConfig, sample_id: str, size: int
+    paths: ProjectPaths, config: ProjectConfig, sample_id: str, size: int
 ) -> None:
     """Execute process for a single sample ID"""
     # get resolved config
@@ -37,10 +36,8 @@ def _execute_single_sample_id(
         cmdconfig.min_separation,
         cmdconfig.max_attempts,
     )
-    sample_path = paths.sample(sample_id)
-    sample_path.ensure_dir()
 
-    process_paths = sample_path.synthesis()
+    process_paths = paths.sample(sample_id).synthesis()
     process_paths.ensure_dir()
     voxels_path = process_paths.voxels
 
@@ -65,7 +62,7 @@ def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    paths: Paths = Paths(args.config.behavior.storage_root)
+    paths: ProjectPaths = ProjectPaths(args.config.behavior.storage_root)
     paths.require_base()
     paths.ensure_samples_root()
     paths.ensure_inventories_root()

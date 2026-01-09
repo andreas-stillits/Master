@@ -10,7 +10,11 @@ from ..config.declaration import LogLevel, ProjectConfig
 from ..config.helpers import deep_update, filter_config_for_command
 from ..utilities.ids import validate_sample_id
 from ..utilities.manifest import dump_manifest
-from ..utilities.paths import Paths, ProcessPathsBase, resolve_existing_inventories_file
+from ..utilities.paths import (
+    ProcessPathsBase,
+    ProjectPaths,
+    resolve_existing_inventories_file,
+)
 
 
 def initialize_parsers(
@@ -152,24 +156,9 @@ def parse_string_value(raw: str) -> Any:
     return value
 
 
-def add_target_directory_argument(parser: argparse.ArgumentParser) -> None:
-    """
-    Add a common target directory argument to the given parser.
-
-    Args:
-        parser (argparse.ArgumentParser): The argument parser to which the target directory argument will be added.
-    """
-    parser.add_argument(
-        "-t",
-        "--target-dir",
-        type=str,
-        default=None,
-        help="Directory where output files will be saved (overrides config storage root location).",
-    )
-    return
-
-
-def interpret_sample_input(paths: Paths, input: str, required_digits: int) -> list[str]:
+def interpret_sample_input(
+    paths: ProjectPaths, input: str, required_digits: int
+) -> list[str]:
     """
     Interpret the sample input argument and return a list of sample IDs
     Args:

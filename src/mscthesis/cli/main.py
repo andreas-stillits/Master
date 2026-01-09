@@ -139,9 +139,9 @@ def main(argv: list[str] | None = None) -> int:
         b = config.behavior
 
         # force quiet mode if command executed with multiple workers (suppress logs on workers)
-        if is_mpi and rank != 0:
+        if is_mpi:
             b.quiet = True
-            b.no_log = True
+            b.no_log = True if rank != 0 else b.no_log
 
         logger = setup_logging(
             b.storage_root / b.log_filename, b.log_level, b.quiet, b.no_log
