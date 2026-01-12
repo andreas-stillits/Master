@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import ast
-import json
 from pathlib import Path
 from typing import Any, Callable
 
@@ -10,7 +9,7 @@ from mpi4py import MPI
 from tqdm import tqdm
 
 from ..config.declaration import LogLevel, ProjectConfig
-from ..config.helpers import deep_update, filter_config_for_command
+from ..config.helpers import deep_update, dump_resolved_command_config
 from ..utilities.ids import validate_sample_id
 from ..utilities.manifest import dump_manifest
 from ..utilities.paths import (
@@ -222,21 +221,6 @@ def interpret_sample_input(
         if validate_sample_id(sample_id, required_digits):
             sample_ids.append(sample_id)
     return sample_ids
-
-
-def dump_resolved_command_config(
-    config: ProjectConfig, command: str, target_path: Path
-) -> None:
-    """
-    Dump the resolved configuration for the given command to a file.
-    Args:
-        config (ProjectConfig): The resolved project configuration.
-        command (str): The command name whose relevant configuration to dump.
-        target_path (Path): The path where the configuration file will be saved.
-    """
-    command_config = filter_config_for_command(config, command)
-    target_path.write_text(json.dumps(command_config, indent=2, default=str))
-    return
 
 
 def document_command_execution(

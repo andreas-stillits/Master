@@ -49,6 +49,21 @@ def filter_config_for_command(model: BaseModel, command: str) -> dict[str, Any]:
     return _recurse(model) or {}
 
 
+def dump_resolved_command_config(
+    config: ProjectConfig, command: str, target_path: Path
+) -> None:
+    """
+    Dump the resolved configuration for the given command to a file.
+    Args:
+        config (ProjectConfig): The resolved project configuration.
+        command (str): The command name whose relevant configuration to dump.
+        target_path (Path): The path where the configuration file will be saved.
+    """
+    command_config = filter_config_for_command(config, command)
+    target_path.write_text(json.dumps(command_config, indent=2, default=str))
+    return
+
+
 def load_config_from_file(path: Path | None) -> dict[str, Any]:
     """
     Load configuration from a JSON file.
