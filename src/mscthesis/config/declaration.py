@@ -126,11 +126,17 @@ class TriangulationConfig(BaseModel):
     smoothing_iterations: int = 15
     decimation_target: int = 10_000
     shrinkage_tolerance: float = 0.10
+    freecad_cmd: str = "freecadcmd-daily"
+    freecad_script_path: str = (
+        "/home/andreasstillits/coding/master/src/mscthesis/core/meshing/breping.py"
+    )
 
     cli_hints: ClassVar[dict[str, str]] = {
         "smoothing_iterations": "Number of smoothing iterations to apply to the mesh",
         "decimation_target": "Target number of faces after decimation",
         "shrinkage_tolerance": "Maximum acceptable shrinkage ratio for area and volume",
+        "freecad_cmd": "Command to run FreeCAD in command line mode",
+        "freecad_script_path": "Path to the FreeCAD script for BREP export (shipped with mscthesis)",
     }
 
 

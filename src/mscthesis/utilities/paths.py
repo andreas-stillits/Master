@@ -317,7 +317,16 @@ class TriangulationPaths(ProcessPathsBase):
     def mesh(self) -> Path:
         return self.dir / "surface_mesh.stl"
 
+    @property
+    def brep(self) -> Path:
+        return self.dir / "surface_mesh.brep"
+
     def require_mesh(self) -> Path:
         self.require_dir()
         require_file(self.mesh)
         return require_extension(self.mesh, ".stl")
+
+    def require_brep(self) -> Path:
+        self.require_dir()
+        require_file(self.brep)
+        return require_extension(self.brep, ".brep")
