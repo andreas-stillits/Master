@@ -15,13 +15,15 @@
     "plug_aspect": 0.3,
     "num_cells": 100,
     "min_radius": 0.05,
-    "max_radius": 0.15,
-    "min_separation": 0.01,
+    "max_radius": 0.1,
+    "min_separation": 0.025,
     "max_attempts": 1000
   },
   "triangulate": {
     "smoothing_iterations": 15,
     "decimation_target": 10000,
-    "shrinkage_tolerance": 0.1
+    "shrinkage_tolerance": 0.1,
+    "freecad_cmd": "freecadcmd-daily",
+    "freecad_script_path": "/home/andreasstillits/coding/master/src/mscthesis/core/meshing/breping.py"
   }
 }
