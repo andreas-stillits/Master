@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import gmsh
 import numpy as np
 import open3d as o3d
 
@@ -32,4 +35,21 @@ def visualize_surface_mesh(mesh: o3d.geometry.TriangleMesh) -> None:
     """
     mesh.compute_vertex_normals()
     o3d.visualization.draw_geometries([mesh], point_show_normal=True, mesh_show_wireframe=True)  # type: ignore[reportAttributeAccessIssue]
+    return
+
+
+@log_call()
+def visualize_volumetric_mesh(mesh_path: str | Path) -> None:
+    """
+    Visualize a volumetric mesh from a given file path using GMSH's built-in GUI
+    Args:
+        mesh_path (str | Path): The file path to the volumetric mesh.
+    """
+    gmsh.initialize()
+    gmsh.option.setNumber("General.Terminal", 0)
+    gmsh.option.setNumber("General.Verbosity", 0)
+    gmsh.model.add("Mesh From File")
+    gmsh.merge(str(mesh_path))
+    gmsh.fltk.run()
+    gmsh.finalize()
     return

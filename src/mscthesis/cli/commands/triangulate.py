@@ -37,10 +37,10 @@ def _execute_single_sample_id(
         cmdconfig.shrinkage_tolerance,
     )
 
-    output_paths = paths.sample(sample_id).triangulation()
-    output_paths.ensure_dir()
-    surface_mesh_stl = output_paths.mesh
-    surface_mesh_brep = output_paths.brep
+    process_paths = paths.sample(sample_id).triangulation()
+    process_paths.ensure_dir()
+    surface_mesh_stl = process_paths.mesh
+    surface_mesh_brep = process_paths.brep
 
     save_surface_mesh(surface_mesh, surface_mesh_stl)
 
@@ -70,7 +70,7 @@ def _execute_single_sample_id(
         metadata["brep_exported"] = False
 
     document_command_execution(
-        output_paths,
+        process_paths,
         config,
         CMD_NAME,
         size,

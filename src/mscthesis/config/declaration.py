@@ -140,6 +140,35 @@ class TriangulationConfig(BaseModel):
     }
 
 
+class MeshingConfig(BaseModel):
+    """Configuration for meshing related settings"""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"expose": True, "commands": ["mesh"]},
+    )
+
+    boundary_margin_fraction: float = 0.05
+    substomatal_cavity_margin_fraction: float = 0.15
+    tolerance: float = 0.01
+    minimum_resolution: float = 0.02
+    maximum_resolution: float = 0.2
+    minimum_distance: float = 0.05
+    maximum_distance: float = 0.2
+    inlet_base_resolution_factor: float = 2.0
+
+    cli_hints: ClassVar[dict[str, str]] = {
+        "boundary_margin_fraction": "Margin fraction for boundary refinement",
+        "substomatal_cavity_margin_fraction": "Margin fraction for substomatal cavity refinement",
+        "tolerance": "Tolerance for geometric operations",
+        "minimum_resolution": "Minimum mesh element size",
+        "maximum_resolution": "Maximum mesh element size",
+        "minimum_distance": "Minimum distance for mesh sizing field",
+        "maximum_distance": "Maximum distance for mesh sizing field",
+        "inlet_base_resolution_factor": "Factor to scale minimum resolution at inlets",
+    }
+
+
 # Declaration of the umbrella config object
 class ProjectConfig(BaseModel):
     """Main project configuration for mscthesis."""
@@ -148,6 +177,7 @@ class ProjectConfig(BaseModel):
     behavior: BehaviorConfig = BehaviorConfig()
     synthesize_uniform: UniformSynthesisConfig = UniformSynthesisConfig()
     triangulate: TriangulationConfig = TriangulationConfig()
+    mesh: MeshingConfig = MeshingConfig()
 
     # helper function for filtering after model_config.json_schema_extra.expose
     def _filter_config_for_exposure(self) -> dict[str, Any]:

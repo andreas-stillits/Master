@@ -248,6 +248,9 @@ class SamplePaths:
     def triangulation(self) -> TriangulationPaths:
         return TriangulationPaths(self)
 
+    def meshing(self) -> MeshingPaths:
+        return MeshingPaths(self)
+
     # verification
 
     def require_dir(self) -> Path:
@@ -330,3 +333,17 @@ class TriangulationPaths(ProcessPathsBase):
         self.require_dir()
         require_file(self.brep)
         return require_extension(self.brep, ".brep")
+
+
+@dataclass(frozen=True)
+class MeshingPaths(ProcessPathsBase):
+    name: str = "meshing"
+
+    @property
+    def mesh(self) -> Path:
+        return self.dir / "volumetric_mesh.msh"
+
+    def require_mesh(self) -> Path:
+        self.require_dir()
+        require_file(self.mesh)
+        return require_extension(self.mesh, ".msh")
