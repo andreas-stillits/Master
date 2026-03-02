@@ -82,7 +82,13 @@ class BehaviorConfig(BaseModel):
     # Can handle abscent and partial declaration with fallback to ""
     cli_hints: ClassVar[dict[str, str]] = {
         "storage_root": "Path to storage root for I/O actions",
+        "sample_id_digits": "Number of digits required for valid sample IDs",
         "quiet": "Flag to store as true and suppress console output",
+        "no_cmdconfig": "Flag to store as true and skip saving command-specific config file",
+        "no_manifest": "Flag to store as true and skip saving manifest file",
+        "no_log": "Flag to store as true and skip saving log file",
+        "log_level": "Logging level for console and file output, choose from: DEBUG, INFO, WARNING, ERROR, CRITICAL",
+        "log_filename": "Filename for log output, stored in storage_root",
     }
 
 
