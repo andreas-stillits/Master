@@ -259,6 +259,9 @@ class SamplePaths:
     def meshing(self) -> MeshingPaths:
         return MeshingPaths(self)
 
+    def solution(self) -> SolutionPaths:
+        return SolutionPaths(self)
+
     # verification
 
     def require_dir(self) -> Path:
@@ -355,3 +358,17 @@ class MeshingPaths(ProcessPathsBase):
         self.require_dir()
         require_file(self.mesh)
         return require_extension(self.mesh, ".msh")
+
+
+@dataclass(frozen=True)
+class SolutionPaths(ProcessPathsBase):
+    name: str = "solution"
+
+    @property
+    def solution(self) -> Path:
+        return self.dir / "solution.csv"
+
+    def require_solution(self) -> Path:
+        self.require_dir()
+        require_file(self.solution)
+        return require_extension(self.solution, ".csv")

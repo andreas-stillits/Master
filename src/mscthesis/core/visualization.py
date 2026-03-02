@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import gmsh
 import numpy as np
 import open3d as o3d
+import pyvista as pv
+from dolfinx import fem
+from dolfinx.mesh import Mesh
+from dolfinx.plot import vtk_mesh
 
 from ..utilities.log import log_call
 
@@ -52,4 +57,41 @@ def visualize_volumetric_mesh(mesh_path: str | Path) -> None:
     gmsh.merge(str(mesh_path))
     gmsh.fltk.run()
     gmsh.finalize()
+    return
+
+
+@log_call()
+def visualize_fem_solution(
+    solution: fem.Function, mesh: Mesh, cell_tags: Any, facet_tags: Any
+) -> None:
+    """
+    Visualize a finite element solution using PyVista
+    Args:
+        solution (fem.Function): The finite element solution to visualize
+        mesh (Mesh): The mesh on which the solution is defined
+        cell_tags (Any): The cell tags for the mesh
+        facet_tags (Any): The facet tags for the mesh
+    """
+    topology, cell_types, geometry = vtk_mesh(mesh, mesh.topology.dim)
+    grid = pv.UnstructuredGrid(topology, cell_types, geometry)
+    grid.point_data["solution"] = solution.x.array.real
+
+    xmin, xmax, ymin, ymax, zmin, zmax = grid.bounds
+
+    p = pv.Plotter()
+    zcenters = [
+        0.02,
+        0.22,
+        0.42,
+        0.62,
+        0.82,
+        0.98,
+    ]
+    for zc in zcenters:
+        slices = grid.slice(normal="z", origin=(0, 0, zc * (zmax - zmin) + zmin))
+        p.add_mesh(slices, scalars="solution", cmap="magma", clim=[0.00, 1.00])
+    p.add_mesh(grid.outline(), color="k")
+    p.show_axes()
+    p.show()
+
     return

@@ -34,5 +34,11 @@
     "boundary_margin_fraction": 0.05,
     "substomatal_cavity_margin_fraction": 0.05,
     "tolerance": 0.01
+  },
+  "solve": {
+    "absorption": 1.0,
+    "transport": 1.0,
+    "compensation": 0.1,
+    "stomatal_epsilon": 0.002
   }
 }

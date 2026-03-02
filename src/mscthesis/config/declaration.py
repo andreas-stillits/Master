@@ -173,6 +173,27 @@ class MeshingConfig(BaseModel):
     }
 
 
+class SolutionConfig(BaseModel):
+    """Configuration for solver related settings"""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"expose": True, "commands": ["solve"]},
+    )
+
+    absorption: float = 1.0
+    transport: float = 1.0
+    compensation: float = 0.1
+    stomatal_epsilon: float = 0.002
+
+    cli_hints: ClassVar[dict[str, str]] = {
+        "absorption": "Absorption balance",
+        "transport": "Transport Balance",
+        "compensation": "Boundary condition value for the mesophyll flux",
+        "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function",
+    }
+
+
 # Declaration of the umbrella config object
 class ProjectConfig(BaseModel):
     """Main project configuration for mscthesis."""
@@ -182,6 +203,7 @@ class ProjectConfig(BaseModel):
     synthesize_uniform: UniformSynthesisConfig = UniformSynthesisConfig()
     triangulate: TriangulationConfig = TriangulationConfig()
     mesh: MeshingConfig = MeshingConfig()
+    solve: SolutionConfig = SolutionConfig()
 
     # helper function for filtering after model_config.json_schema_extra.expose
     def _filter_config_for_exposure(self) -> dict[str, Any]:
