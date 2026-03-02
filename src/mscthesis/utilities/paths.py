@@ -216,6 +216,10 @@ class ProjectPaths:
     def inventories(self) -> Path:
         return self.base / "inventories"
 
+    @property
+    def processes(self) -> Path:
+        return self.base / "processes"
+
     def sample(self, sample_id: str) -> SamplePaths:
         return SamplePaths(self, sample_id)
 
@@ -230,6 +234,10 @@ class ProjectPaths:
     def ensure_inventories_root(self) -> Path:
         self.require_base()
         return ensure_dir(self.inventories)
+
+    def ensure_processes_root(self) -> Path:
+        self.require_base()
+        return ensure_dir(self.processes)
 
 
 @dataclass(frozen=True)
