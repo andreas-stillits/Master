@@ -10,6 +10,7 @@ from ...utilities.log import log_call
 
 # set namespace
 kernel = gmsh.model.occ
+field = gmsh.model.mesh.field
 
 # monkey patch silent initialization
 _original_initialize = gmsh.initialize
@@ -22,8 +23,15 @@ def _silent_initialize(*args, **kwargs) -> None:
     gmsh.option.setNumber("General.Verbosity", 0)
 
 
-def _metadata() -> dict[str, Any]:
-    return {}
+def _metadata(
+    plug_aspect: float,
+    stomatal_aspect: float,
+) -> dict[str, Any]:
+    """Collect relevant metadata from the meshing process to be stored with the command execution record"""
+    return {
+        "plug_aspect": plug_aspect,
+        "stomatal_aspect": stomatal_aspect,
+    }
 
 
 def _iterative_affine_transformation(
@@ -80,7 +88,6 @@ def build_gmsh_model(
     entities: list[tuple[int, int]],
     boundary_margin_fraction: float,
     substomatal_cavity_margin_fraction: float,
-    tolerance: float,
 ) -> list[tuple[int, int]]:
     """
     Build the gmsh model from imported entities.
@@ -185,7 +192,7 @@ def build_gmsh_model(
         """Calculate relative error in height"""
         return (size[2] - target_size) / target_size
 
-    iterations = _iterative_affine_transformation(
+    _ = _iterative_affine_transformation(
         airspace,
         _transformation,
         _error,
@@ -201,14 +208,14 @@ def build_gmsh_model(
 def assign_physical_groups(
     airspace: list[tuple[int, int]],
     tolerance: float,
-) -> dict[str, Any]:
+) -> tuple[dict[str, Any], float]:
     """
     Assign physical groups: airspace volume, top surface, bottom surface, curved surface, mesophyll surfaces
     Args:
         airspace (list[tuple[int, int]]): List of (dim, tag) tuples representing the airspace entity
         tolerance (float): Tolerance for relative difference from expected area when identifying curved face
     Returns:
-        dict[str, list[int] | int]: Dictionary containing tags for physical groups
+        tuple[dict[str, list[int] | int], float]: Tuple containing dictionary with tags for physical groups and the plug aspect ratio
     """
     # determine curved face tag
     # OBS: this approach of identification by area only works if the curved area 2 pi r is unique up to tolerace
@@ -275,58 +282,63 @@ def assign_physical_groups(
         "bottom_area_tag": bottom_area_tag,
     }
 
-    return tags
+    plug_aspect = float((a + b) / 2)
+
+    return tags, plug_aspect
 
 
 @log_call()
 def configure_meshfield(
     tags: dict[str, Any],
-    minimum_resolution: float,
-    maximum_resolution: float,
-    minimum_distance: float,
-    maximum_distance: float,
-    inlet_base_resolution_factor: float,
+    plug_aspect: float,
+    stomatal_aspect: float,
+    resolution_factor: float,
+    minimum_distance_factor: float,
+    maximum_distance_factor: float,
 ) -> None:
     """
     Configure the mesh size field in gmsh.
     Args:
         tags (dict[str, list[int] | int]): Dictionary containing tags for physical groups
-        minimum_resolution (float): Minimum mesh element size.
-        maximum_resolution (float): Maximum mesh element size.
-        minimum_distance (float): Minimum distance for size field.
-        maximum_distance (float): Maximum distance for size field.
-        inlet_base_resolution_factor (float): Factor to adjust inlet resolution.
+        stomatal_aspect (float): Aspect ratio of the stomatal cavity.
+        stomatal_epsilon (float): Epsilon value for the stomatal cavity.
+        resolution_factor (float): Factor to adjust resolution.
+        minimum_distance_factor (float): Factor to adjust minimum distance.
+        maximum_distance_factor (float): Factor to adjust maximum distance.
     """
+    # Calculate resolution and distance parameters based on the provided factors and the size of the plug
+    minimum_resolution = stomatal_aspect / resolution_factor
+    maximum_resolution = plug_aspect / resolution_factor
+    minimum_distance = stomatal_aspect * minimum_distance_factor
+    maximum_distance = stomatal_aspect * maximum_distance_factor
+
+    point_tag = kernel.addPoint(0.0, 0.0, 0.0, 1.0)
+    kernel.synchronize()
+
+    boundary_distance = field.add("Distance")
+    field.setNumbers(boundary_distance, "NodesList", [point_tag])
+    boundary_threshold = field.add("Threshold")
+    field.setNumber(boundary_threshold, "InField", boundary_distance)
+    field.setNumber(boundary_threshold, "LcMin", minimum_resolution)
+    field.setNumber(boundary_threshold, "LcMax", maximum_resolution)
+    field.setNumber(boundary_threshold, "DistMin", minimum_distance)
+    field.setNumber(boundary_threshold, "DistMax", maximum_distance)
+
     # control distance to mesophyll cell surfaces
-    mesophyll_distance = gmsh.model.mesh.field.add("Distance")
-    gmsh.model.mesh.field.setNumbers(
-        mesophyll_distance, "FacesList", tags["mesophyll_surface_tags"]
-    )
-    mesophyll_threshold = gmsh.model.mesh.field.add("Threshold")
-    gmsh.model.mesh.field.setNumber(mesophyll_threshold, "IField", mesophyll_distance)
-    gmsh.model.mesh.field.setNumber(mesophyll_threshold, "LcMin", minimum_resolution)
-    gmsh.model.mesh.field.setNumber(mesophyll_threshold, "LcMax", maximum_resolution)
-    gmsh.model.mesh.field.setNumber(mesophyll_threshold, "DistMin", minimum_distance)
-    gmsh.model.mesh.field.setNumber(mesophyll_threshold, "DistMax", maximum_distance)
+    mesophyll_distance = field.add("Distance")
+    field.setNumbers(mesophyll_distance, "FacesList", tags["mesophyll_surface_tags"])
+    mesophyll_threshold = field.add("Threshold")
+    field.setNumber(mesophyll_threshold, "InField", mesophyll_distance)
+    field.setNumber(mesophyll_threshold, "LcMin", 2 * minimum_resolution)
+    field.setNumber(mesophyll_threshold, "LcMax", maximum_resolution)
+    field.setNumber(mesophyll_threshold, "DistMin", minimum_distance)
+    field.setNumber(mesophyll_threshold, "DistMax", maximum_distance)
     #
-    inlet_distance = gmsh.model.mesh.field.add("Distance")
-    gmsh.model.mesh.field.setNumbers(
-        inlet_distance, "FacesList", [tags["bottom_area_tag"], tags["top_area_tag"]]
+    minimum_field = field.add("Min")
+    field.setNumbers(
+        minimum_field, "FieldsList", [mesophyll_threshold, boundary_threshold]
     )
-    inlet_threshold = gmsh.model.mesh.field.add("Threshold")
-    gmsh.model.mesh.field.setNumber(inlet_threshold, "IField", inlet_distance)
-    gmsh.model.mesh.field.setNumber(
-        inlet_threshold, "LcMin", minimum_resolution * inlet_base_resolution_factor
-    )
-    gmsh.model.mesh.field.setNumber(inlet_threshold, "LcMax", maximum_resolution)
-    gmsh.model.mesh.field.setNumber(inlet_threshold, "DistMin", minimum_distance)
-    gmsh.model.mesh.field.setNumber(inlet_threshold, "DistMax", maximum_distance)
-    #
-    minimum_field = gmsh.model.mesh.field.add("Min")
-    gmsh.model.mesh.field.setNumbers(
-        minimum_field, "FieldsList", [mesophyll_threshold, inlet_threshold]
-    )
-    gmsh.model.mesh.field.setAsBackgroundMesh(minimum_field)
+    field.setAsBackgroundMesh(minimum_field)
     kernel.synchronize()
     return
 
@@ -335,14 +347,13 @@ def configure_meshfield(
 def run_gmsh_session(
     brep_file: str | Path,
     output_mesh_file: str | Path,
+    stomatal_aspect: float,
+    resolution_factor: float,
+    minimum_distance_factor: float,
+    maximum_distance_factor: float,
     boundary_margin_fraction: float,
     substomatal_cavity_margin_fraction: float,
     tolerance: float,
-    minimum_resolution: float,
-    maximum_resolution: float,
-    minimum_distance: float,
-    maximum_distance: float,
-    inlet_base_resolution_factor: float,
 ) -> dict[str, Any]:
     """
     Run the gmsh meshing session.
@@ -360,21 +371,20 @@ def run_gmsh_session(
         entities,
         boundary_margin_fraction,
         substomatal_cavity_margin_fraction,
-        tolerance,
     )
 
-    tags = assign_physical_groups(airspace, tolerance)
+    tags, plug_aspect = assign_physical_groups(airspace, tolerance)
 
     configure_meshfield(
         tags,
-        minimum_resolution,
-        maximum_resolution,
-        minimum_distance,
-        maximum_distance,
-        inlet_base_resolution_factor,
+        plug_aspect,
+        stomatal_aspect,
+        resolution_factor,
+        minimum_distance_factor,
+        maximum_distance_factor,
     )
 
     gmsh.model.mesh.generate(3)
     gmsh.write(str(output_mesh_file))
 
-    return _metadata()
+    return _metadata(plug_aspect, stomatal_aspect)

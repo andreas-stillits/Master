@@ -154,24 +154,22 @@ class MeshingConfig(BaseModel):
         json_schema_extra={"expose": True, "commands": ["mesh"]},
     )
 
+    stomatal_aspect: float = 0.02
+    resolution_factor: float = 4.0
+    minimum_distance_factor: float = 3.0
+    maximum_distance_factor: float = 10.0
     boundary_margin_fraction: float = 0.05
-    substomatal_cavity_margin_fraction: float = 0.15
+    substomatal_cavity_margin_fraction: float = 0.05
     tolerance: float = 0.01
-    minimum_resolution: float = 0.02
-    maximum_resolution: float = 0.2
-    minimum_distance: float = 0.05
-    maximum_distance: float = 0.2
-    inlet_base_resolution_factor: float = 2.0
 
     cli_hints: ClassVar[dict[str, str]] = {
-        "boundary_margin_fraction": "Margin fraction for boundary refinement",
-        "substomatal_cavity_margin_fraction": "Margin fraction for substomatal cavity refinement",
-        "tolerance": "Tolerance for geometric operations",
-        "minimum_resolution": "Minimum mesh element size",
-        "maximum_resolution": "Maximum mesh element size",
-        "minimum_distance": "Minimum distance for mesh sizing field",
-        "maximum_distance": "Maximum distance for mesh sizing field",
-        "inlet_base_resolution_factor": "Factor to scale minimum resolution at inlets",
+        "stomatal_aspect": "Ratio of stomatal radius to plug thickness/height",
+        "resolution_factor": "Factor to determine meshing resolution based plug dimensions",
+        "minimum_distance_factor": "Minimum distance factor for mesh field to have minimal spacing",
+        "maximum_distance_factor": "Maximum distance factor for mesh field to have maximal spacing",
+        "boundary_margin_fraction": "Margin fraction for minimum distance to outer edges",
+        "substomatal_cavity_margin_fraction": "Margin fraction for minimum distance to substomatal cavity (bottom of the plug)",
+        "tolerance": "Tolerance for meshing operations",
     }
 
 

@@ -34,14 +34,13 @@ def _execute_single_sample_id(
     metadata = run_gmsh_session(
         input_path,
         mesh_path,
+        cmdconfig.stomatal_aspect,
+        cmdconfig.resolution_factor,
+        cmdconfig.minimum_distance_factor,
+        cmdconfig.maximum_distance_factor,
         cmdconfig.boundary_margin_fraction,
         cmdconfig.substomatal_cavity_margin_fraction,
         cmdconfig.tolerance,
-        cmdconfig.minimum_resolution,
-        cmdconfig.maximum_resolution,
-        cmdconfig.minimum_distance,
-        cmdconfig.maximum_distance,
-        cmdconfig.inlet_base_resolution_factor,
     )
 
     document_command_execution(

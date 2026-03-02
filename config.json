@@ -27,13 +27,12 @@
     "freecad_script_path": "/home/andreasstillits/coding/master/src/mscthesis/core/meshing/breping.py"
   },
   "mesh": {
+    "stomatal_aspect": 0.02,
+    "resolution_factor": 4.0,
+    "minimum_distance_factor": 3.0,
+    "maximum_distance_factor": 10.0,
     "boundary_margin_fraction": 0.05,
-    "substomatal_cavity_margin_fraction": 0.15,
-    "tolerance": 0.01,
-    "minimum_resolution": 0.02,
-    "maximum_resolution": 0.2,
-    "minimum_distance": 0.05,
-    "maximum_distance": 0.2,
-    "inlet_base_resolution_factor": 2.0
+    "substomatal_cavity_margin_fraction": 0.05,
+    "tolerance": 0.01
   }
 }
