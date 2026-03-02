@@ -26,11 +26,22 @@ def _silent_initialize(*args, **kwargs) -> None:
 def _metadata(
     plug_aspect: float,
     stomatal_aspect: float,
+    mesophyll_area: float,
 ) -> dict[str, Any]:
     """Collect relevant metadata from the meshing process to be stored with the command execution record"""
+    plug_area = np.pi * plug_aspect**2
+    stomatal_area = np.pi * stomatal_aspect**2
+    stomatal_area_fraction = stomatal_area / plug_area
+    mesophyll_area_fraction = mesophyll_area / plug_area
+
     return {
         "plug_aspect": plug_aspect,
         "stomatal_aspect": stomatal_aspect,
+        "plug_area": plug_area,
+        "stomatal_area": stomatal_area,
+        "mesophyll_area": mesophyll_area,
+        "stomatal_area_fraction": stomatal_area_fraction,
+        "mesophyll_area_fraction": mesophyll_area_fraction,
     }
 
 
@@ -208,14 +219,14 @@ def build_gmsh_model(
 def assign_physical_groups(
     airspace: list[tuple[int, int]],
     tolerance: float,
-) -> tuple[dict[str, Any], float]:
+) -> tuple[dict[str, Any], float, float]:
     """
     Assign physical groups: airspace volume, top surface, bottom surface, curved surface, mesophyll surfaces
     Args:
         airspace (list[tuple[int, int]]): List of (dim, tag) tuples representing the airspace entity
         tolerance (float): Tolerance for relative difference from expected area when identifying curved face
     Returns:
-        tuple[dict[str, list[int] | int], float]: Tuple containing dictionary with tags for physical groups and the plug aspect ratio
+        tuple[dict[str, list[int] | int], float, float]: Tuple containing dictionary with tags for physical groups, the plug aspect ratio, and the mesophyll surface area
     """
     # determine curved face tag
     # OBS: this approach of identification by area only works if the curved area 2 pi r is unique up to tolerace
@@ -283,8 +294,11 @@ def assign_physical_groups(
     }
 
     plug_aspect = float((a + b) / 2)
+    mesophyll_area = 0
+    for tag in mesophyll_surface_tags:
+        mesophyll_area += kernel.getMass(2, tag)
 
-    return tags, plug_aspect
+    return tags, plug_aspect, mesophyll_area
 
 
 @log_call()
@@ -373,7 +387,7 @@ def run_gmsh_session(
         substomatal_cavity_margin_fraction,
     )
 
-    tags, plug_aspect = assign_physical_groups(airspace, tolerance)
+    tags, plug_aspect, mesophyll_area = assign_physical_groups(airspace, tolerance)
 
     configure_meshfield(
         tags,
@@ -387,4 +401,4 @@ def run_gmsh_session(
     gmsh.model.mesh.generate(3)
     gmsh.write(str(output_mesh_file))
 
-    return _metadata(plug_aspect, stomatal_aspect)
+    return _metadata(plug_aspect, stomatal_aspect, mesophyll_area)

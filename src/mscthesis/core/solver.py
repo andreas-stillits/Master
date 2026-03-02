@@ -79,6 +79,8 @@ class UniformSolver:
         plug_aspect: float,
         stomatal_aspect: float,
         stomatal_epsilon: float,
+        stomatal_area_fraction: float,
+        mesophyll_area_fraction: float,
         mesh: Mesh,
         cell_tags: Any,
         facet_tags: Any,
@@ -90,6 +92,8 @@ class UniformSolver:
         self.plug_aspect = plug_aspect
         self.stomatal_aspect = stomatal_aspect
         self.stomatal_epsilon = stomatal_epsilon
+        self.stomatal_area_fraction = stomatal_area_fraction
+        self.mesophyll_area_fraction = mesophyll_area_fraction
         self.mesh = mesh
         self.cell_tags = cell_tags
         self.facet_tags = facet_tags
@@ -100,10 +104,14 @@ class UniformSolver:
         functionspace = fem.functionspace(self.mesh, ("Lagrange", self.order))
         dx, ds = _get_measures(self.mesh, self.cell_tags, self.facet_tags)
 
-        absorption = fem.Constant(self.mesh, default_scalar_type(self.absorption))
-        transport = fem.Constant(self.mesh, default_scalar_type(self.transport))
         compensation = fem.Constant(self.mesh, default_scalar_type(self.compensation))
-        #
+        surface_coeff = fem.Constant(
+            self.mesh,
+            default_scalar_type(self.absorption / self.mesophyll_area_fraction),
+        )
+        stomatal_coeff = fem.Constant(
+            self.mesh, default_scalar_type(self.transport / self.stomatal_area_fraction)
+        )
 
         chi = ufl.TrialFunction(functionspace)
         v = ufl.TestFunction(functionspace)
@@ -115,13 +123,13 @@ class UniformSolver:
         # Weak form
         a = (
             ufl.inner(ufl.grad(chi), ufl.grad(v)) * dx(AIRSPACE_TAG)
-            + absorption * chi * v * ds(MESOPHYLL_TAG)
-            + transport * envelope * chi * v * ds(BOTTOM_TAG)
+            + surface_coeff * chi * v * ds(MESOPHYLL_TAG)
+            + stomatal_coeff * envelope * chi * v * ds(BOTTOM_TAG)
         )
 
-        L = absorption * compensation * v * ds(
+        L = surface_coeff * compensation * v * ds(
             MESOPHYLL_TAG
-        ) + transport * envelope * v * ds(BOTTOM_TAG)
+        ) + stomatal_coeff * envelope * v * ds(BOTTOM_TAG)
 
         problem = LinearProblem(
             a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"}
