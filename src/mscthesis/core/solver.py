@@ -23,36 +23,6 @@ def _get_stomatal_envelope(
     return envelope
 
 
-# def analyze_solution(
-#     params: tuple[float, float, float],
-#     solution: fem.Function,
-#     mesh: Mesh,
-#     cell_tags: Any,
-#     facet_tags: Any,
-#     plug_aspect: float,
-#     stomatal_aspect: float,
-#     stomatal_epsilon: float,
-# ) -> tuple[float, float]:
-
-#     absorption, transport, compensation = params
-#     dx, ds = _get_measures(mesh, cell_tags, facet_tags)
-
-#     # stomatal flux
-#     envelope = _get_stomatal_envelope(
-#         mesh, plug_aspect, stomatal_aspect, stomatal_epsilon
-#     )
-#     stomatal_flux = fem.assemble_scalar(
-#         fem.form(transport * envelope * (1 - solution) * ds(BOTTOM_TAG))
-#     )
-
-#     # mesophyll flux
-#     mesophyll_flux = fem.assemble_scalar(
-#         fem.form(absorption * (solution - compensation) * ds(MESOPHYLL_TAG))
-#     )
-
-#     return float(stomatal_flux), float(mesophyll_flux)
-
-
 class UniformSolver:
     def __init__(
         self,
