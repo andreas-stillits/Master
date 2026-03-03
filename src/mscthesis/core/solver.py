@@ -19,63 +19,44 @@ def _get_stomatal_envelope(
 ) -> Any:
     x = ufl.SpatialCoordinate(mesh)
     phi = x[0] ** 2 + x[1] ** 2 - stomatal_aspect**2  # type: ignore[reportIndexIssue]
-    envolope = 0.5 * (1 - ufl.tanh(phi / stomatal_epsilon / plug_aspect**2))
-    return envolope
+    envelope = 0.5 * (1 - ufl.tanh(phi / stomatal_epsilon / plug_aspect**2))
+    return envelope
 
 
-def _get_measures(mesh: Mesh, cell_tags: Any, facet_tags: Any) -> tuple[Any, Any]:
-    dx = ufl.Measure("dx", domain=mesh, subdomain_data=cell_tags)
-    ds = ufl.Measure("ds", domain=mesh, subdomain_data=facet_tags)
-    return dx, ds
+# def analyze_solution(
+#     params: tuple[float, float, float],
+#     solution: fem.Function,
+#     mesh: Mesh,
+#     cell_tags: Any,
+#     facet_tags: Any,
+#     plug_aspect: float,
+#     stomatal_aspect: float,
+#     stomatal_epsilon: float,
+# ) -> tuple[float, float]:
 
+#     absorption, transport, compensation = params
+#     dx, ds = _get_measures(mesh, cell_tags, facet_tags)
 
-def analyze_solution(
-    params: tuple[float, float, float],
-    solution: fem.Function,
-    mesh: Mesh,
-    cell_tags: Any,
-    facet_tags: Any,
-    plug_aspect: float,
-    stomatal_aspect: float,
-    stomatal_epsilon: float,
-) -> tuple[float, float]:
-    """
-    Analyze the solution by computing derived quantities of interest
-    Args:
-        params (tuple[float, float, float]): The parameters used in the simulation (absorption, transport, compensation)
-        solution (fem.Function): The computed solution to analyze
-        mesh (Mesh): The mesh on which the solution is defined
-        plug_aspect (float): The aspect ratio of the plug
-        stomatal_aspect (float): The aspect ratio of the stomata
-        stomatal_epsilon (float): The smoothing parameter for the stomatal envelope
-    Returns:
-        tuple[float, float]: The computed stomatal and mesophyll fluxes
-    """
-    # compute the assimilatio rate in two ways: stomatal and mesophyll fluxes
+#     # stomatal flux
+#     envelope = _get_stomatal_envelope(
+#         mesh, plug_aspect, stomatal_aspect, stomatal_epsilon
+#     )
+#     stomatal_flux = fem.assemble_scalar(
+#         fem.form(transport * envelope * (1 - solution) * ds(BOTTOM_TAG))
+#     )
 
-    absorption, transport, compensation = params
-    dx, ds = _get_measures(mesh, cell_tags, facet_tags)
+#     # mesophyll flux
+#     mesophyll_flux = fem.assemble_scalar(
+#         fem.form(absorption * (solution - compensation) * ds(MESOPHYLL_TAG))
+#     )
 
-    # stomatal flux
-    envelope = _get_stomatal_envelope(
-        mesh, plug_aspect, stomatal_aspect, stomatal_epsilon
-    )
-    stomatal_flux = fem.assemble_scalar(
-        fem.form(transport * envelope * (1 - solution) * ds(BOTTOM_TAG))
-    )
-
-    # mesophyll flux
-    mesophyll_flux = fem.assemble_scalar(
-        fem.form(absorption * (solution - compensation) * ds(MESOPHYLL_TAG))
-    )
-
-    return float(stomatal_flux), float(mesophyll_flux)
+#     return float(stomatal_flux), float(mesophyll_flux)
 
 
 class UniformSolver:
     def __init__(
         self,
-        params: tuple[float, float, float],
+        compensation: float,
         plug_aspect: float,
         stomatal_aspect: float,
         stomatal_epsilon: float,
@@ -86,9 +67,8 @@ class UniformSolver:
         facet_tags: Any,
         order: int,
     ) -> None:
-        self.absorption = params[0]
-        self.transport = params[1]
-        self.compensation = params[2]
+        # adopt variables
+        self.compensation = compensation
         self.plug_aspect = plug_aspect
         self.stomatal_aspect = stomatal_aspect
         self.stomatal_epsilon = stomatal_epsilon
@@ -98,42 +78,74 @@ class UniformSolver:
         self.cell_tags = cell_tags
         self.facet_tags = facet_tags
         self.order = order
+        # initialize objects
+        self.functionspace = fem.functionspace(self.mesh, ("CG", self.order))
+        self.dx = ufl.Measure("dx", domain=mesh, subdomain_data=cell_tags)
+        self.ds = ufl.Measure("ds", domain=mesh, subdomain_data=facet_tags)
 
-    def solve(self) -> fem.Function:
-
-        functionspace = fem.functionspace(self.mesh, ("Lagrange", self.order))
-        dx, ds = _get_measures(self.mesh, self.cell_tags, self.facet_tags)
-
-        compensation = fem.Constant(self.mesh, default_scalar_type(self.compensation))
-        surface_coeff = fem.Constant(
-            self.mesh,
-            default_scalar_type(self.absorption / self.mesophyll_area_fraction),
+        self.compensation = fem.Constant(
+            self.mesh, default_scalar_type(self.compensation)
         )
-        stomatal_coeff = fem.Constant(
-            self.mesh, default_scalar_type(self.transport / self.stomatal_area_fraction)
-        )
+        self.surface_coeff = fem.Constant(self.mesh, default_scalar_type(0.0))
+        self.stomatal_coeff = fem.Constant(self.mesh, default_scalar_type(0.0))
 
-        chi = ufl.TrialFunction(functionspace)
-        v = ufl.TestFunction(functionspace)
-
-        envelope = _get_stomatal_envelope(
-            self.mesh, self.plug_aspect, self.stomatal_aspect, self.stomatal_epsilon
+        self.envelope = _get_stomatal_envelope(
+            mesh, plug_aspect, stomatal_aspect, stomatal_epsilon
         )
 
-        # Weak form
+        chi = ufl.TrialFunction(self.functionspace)
+        v = ufl.TestFunction(self.functionspace)
+
         a = (
-            ufl.inner(ufl.grad(chi), ufl.grad(v)) * dx(AIRSPACE_TAG)
-            + surface_coeff * chi * v * ds(MESOPHYLL_TAG)
-            + stomatal_coeff * envelope * chi * v * ds(BOTTOM_TAG)
+            ufl.inner(ufl.grad(chi), ufl.grad(v)) * self.dx(AIRSPACE_TAG)
+            + self.surface_coeff * chi * v * self.ds(MESOPHYLL_TAG)
+            + self.stomatal_coeff * self.envelope * chi * v * self.ds(BOTTOM_TAG)
         )
-
-        L = surface_coeff * compensation * v * ds(
+        L = self.surface_coeff * self.compensation * v * self.ds(
             MESOPHYLL_TAG
-        ) + stomatal_coeff * envelope * v * ds(BOTTOM_TAG)
+        ) + self.stomatal_coeff * self.envelope * v * self.ds(BOTTOM_TAG)
 
-        problem = LinearProblem(
-            a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"}
+        self.problem = LinearProblem(
+            a,
+            L,
+            bcs=[],
+            petsc_options={
+                "ksp_type": "cg",
+                "ksp_rtol": 1e-8,
+                "pc_type": "hypre",
+                "pc_hypre_type": "boomeramg",
+            },
         )
-        solution = problem.solve()
 
-        return solution
+    def analyze(self, solution: fem.Function) -> dict[str, Any]:
+        # stomatal flux
+        stomatal_flux = fem.assemble_scalar(
+            fem.form(
+                self.stomatal_coeff
+                * self.envelope
+                * (1 - solution)
+                * self.ds(BOTTOM_TAG)
+            )
+        )
+        # mesophyll flux
+        mesophyll_flux = fem.assemble_scalar(
+            fem.form(
+                self.surface_coeff
+                * (solution - self.compensation)
+                * self.ds(MESOPHYLL_TAG)
+            )
+        )
+        return {
+            "stomatal_flux": float(stomatal_flux),
+            "mesophyll_flux": float(mesophyll_flux),
+        }
+
+    def solve_for(self, absorption: float, transport: float) -> fem.Function:
+        self.surface_coeff.value = default_scalar_type(
+            absorption / self.mesophyll_area_fraction
+        )
+        self.stomatal_coeff.value = default_scalar_type(
+            transport / self.stomatal_area_fraction
+        )
+        solution = self.problem.solve()
+        return self.analyze(solution)
