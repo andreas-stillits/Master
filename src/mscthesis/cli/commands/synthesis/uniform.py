@@ -31,9 +31,8 @@ def _execute_single_sample_id(
         cmdconfig.resolution,
         cmdconfig.plug_aspect,
         cmdconfig.num_cells,
-        cmdconfig.min_radius,
-        cmdconfig.max_radius,
-        cmdconfig.min_separation,
+        cmdconfig.radius,
+        cmdconfig.separation,
         cmdconfig.max_attempts,
     )
 

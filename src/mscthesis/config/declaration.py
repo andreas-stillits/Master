@@ -101,22 +101,20 @@ class UniformSynthesisConfig(BaseModel):
     )
 
     base_seed: int = 123456
-    resolution: int = 64
-    plug_aspect: float = 0.30
+    resolution: int = 100
+    plug_aspect: float = 0.25
     num_cells: int = 100
-    min_radius: float = 0.05
-    max_radius: float = 0.15
-    min_separation: float = 0.01
-    max_attempts: int = 1000
+    radius: float = 0.08
+    separation: float = 0.01
+    max_attempts: int = 10_000
 
     cli_hints: ClassVar[dict[str, str]] = {
         "base_seed": "Base seed for random number generation",
         "resolution": "Number of voxels along each axis",
         "plug_aspect": "Ratio of plug radius to plug thickness/height",
         "num_cells": "Number of cells (spheres) to place in the model",
-        "min_radius": "Minimum radius of the cells",
-        "max_radius": "Maximum radius of the cells",
-        "min_separation": "Minimum separation distance between cells",
+        "radius": "Radius of the cells",
+        "separation": "Minimum separation distance between cells and boundaries",
         "max_attempts": "Maximum attempts to place each cell without overlap",
     }
 

@@ -122,7 +122,10 @@ def assemble_cli_overrides(
     args_keys = args_dict.keys()
     cli_overrides: dict[str, Any] = {}
 
-    for configkey in ["behavior", args.command]:
+    # translate potential dash to underscore, consistent with config naming
+    command_name = args.command.replace("-", "_") if args.command else ""
+
+    for configkey in ["behavior", command_name]:
         # assemble subdict for each config section
         if configkey in keys:
             cmd_defaults: dict[str, Any] = defaults_dict[configkey]

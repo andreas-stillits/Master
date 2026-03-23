@@ -52,28 +52,23 @@ def generate_voxels_from_seed(
     resolution: int,
     plug_aspect: float,
     num_cells: int,
-    min_radius: float,
-    max_radius: float,
-    min_separation: float,
+    radius: float,
+    separation: float,
     max_attempts: int,
 ) -> tuple[np.ndarray[tuple[int, int, int]], dict[str, Any]]:
     """
-    Generate uniform swiss cheese voxel models for a given seed.
+    Generate uniform swiss cheese voxel model for a given random seed.
 
     Args:
-        seed (int): Seed for random number generation.
+        random_seed (int): Seed for random number generation.
         resolution (int): Number of voxels along each axis.
         plug_aspect (float): Ratio of plug radius to plug thickness/height.
         num_cells (int): Number of cells (spheres) to place in the model.
-        min_radius (float): Minimum radius of the cells.
-        max_radius (float): Maximum radius of the cells.
-        min_separation (float): Minimum separation distance between cells.
-        max_attempts (int): Maximum attempts to place each cell without overlap.
-
+        radius (float): Radius of the cells (spheres).
+        separation (float): Minimum separation distance between cells and boundaries.
+        max_attempts (int): Maximum number of attempts to place each cell.
     Returns:
-        np.ndarray: 3D numpy array of shape (planar_resolution, planar_resolution, resolution)
-        with uint8 values, where 1 indicates presence of tissue (cell)
-        and 0 indicates airspace.
+        np.ndarray: 3D numpy array of shape (planar_resolution, planar_resolution, resolution).
         dict[str, Any]: Metadata dictionary.
     """
 
@@ -84,13 +79,13 @@ def generate_voxels_from_seed(
     # initialize cell lists and determine placement boundaries
     centers = np.zeros((num_cells, 3))
     radii = np.zeros((num_cells,))
-    max_r = plug_aspect - max_radius - min_separation
-    min_z = max_radius + min_separation
-    max_z = 1 - max_radius - min_separation
+    max_r = plug_aspect - radius - separation
+    min_z = radius + separation
+    max_z = 1 - radius - separation
 
     if max_r <= 0:
         raise ValueError(
-            f"Cell size {max_radius} and separation {min_separation} too large for given plug aspect {plug_aspect}."
+            f"Cell size {radius} and separation {separation} too large for given plug aspect {plug_aspect}."
         )
 
     # placement of cells
@@ -112,10 +107,9 @@ def generate_voxels_from_seed(
                 continue
 
             # draw random cell radius and check for overlaps
-            radius = np.random.uniform(min_radius, max_radius)
             if np.all(
                 np.linalg.norm(centers[:i] - center, axis=1)
-                > (radii[:i] + radius + min_separation)
+                > (radii[:i] + radius + separation)
             ):
                 centers[i] = center
                 radii[i] = radius
@@ -152,9 +146,8 @@ def generate_voxels_from_sample_id(
     resolution: int,
     plug_aspect: float,
     num_cells: int,
-    min_radius: float,
-    max_radius: float,
-    min_separation: float,
+    radius: float,
+    separation: float,
     max_attempts: int,
 ) -> tuple[np.ndarray[tuple[int, int, int]], dict[str, Any]]:
     """
@@ -166,9 +159,8 @@ def generate_voxels_from_sample_id(
         resolution (int): Number of voxels along each axis.
         plug_aspect (float): Ratio of plug radius to plug thickness/height.
         num_cells (int): Number of cells (spheres) to place in the model.
-        min_radius (float): Minimum radius of the cells.
-        max_radius (float): Maximum radius of the cells.
-        min_separation (float): Minimum separation distance between cells.
+        radius (float): Radius of the cells.
+        separation (float): Minimum separation distance between cells and boundaries.
         max_attempts (int): Maximum attempts to place each cell without overlap.
 
     Returns:
@@ -186,9 +178,8 @@ def generate_voxels_from_sample_id(
         resolution,
         plug_aspect,
         num_cells,
-        min_radius,
-        max_radius,
-        min_separation,
+        radius,
+        separation,
         max_attempts,
     )
 
