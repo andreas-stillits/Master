@@ -3,8 +3,6 @@ from __future__ import annotations
 import argparse
 import time
 
-from mpi4py import MPI
-
 from ..config.declaration import ProjectConfig
 from ..config.helpers import build_project_config
 from ..utilities.log import exit_program_log, setup_logging
