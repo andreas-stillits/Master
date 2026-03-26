@@ -5,13 +5,12 @@ import json
 from pathlib import Path
 
 import pandas as pd
-from mpi4py import MPI
 
 from ....config.declaration import ProjectConfig
 from ....utilities.paths import ProjectPaths
 
 
-def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
+def _cmd(args: argparse.Namespace) -> None:
     """Command to aggregate statistics for voxel data"""
     config: ProjectConfig = args.config
     # get samples path

@@ -89,20 +89,12 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     """Main entry point for the CLI."""
-    # handle potential MPI initialization and print info from rank 0
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    size = comm.Get_size()
-    is_mpi = size > 1
-
-    if is_mpi and rank == 0:
-        print(f"MPI entry with {size} processes.", flush=True)
 
     parser = _build_parser()
 
     # Enable tab completion if argcomplete is available (user must run: 'eval "$(register-python-argcomplete mscthesis)"'
     # in bash per session or add to .bashrc (I did))
-    if argcomplete is not None and rank == 0:
+    if argcomplete is not None:
         argcomplete.autocomplete(parser)
 
     args = parser.parse_args(argv)
@@ -112,27 +104,23 @@ def main(argv: list[str] | None = None) -> int:
 
     if hasattr(args, "config_command") and args.config_command == "init":
         # execute init command
-        if rank == 0:
-            args.config = defaults  # defaults
-            args.cmd(args, comm)
+        args.config = defaults  # defaults
+        args.cmd(args)
         return 0
 
     # if the user has not initialized a config file in their home directory, ask them to:
     if not defaults.meta.user_config_path.is_file():
-        if rank == 0:
-            print(
-                f"User config file not found at: {defaults.meta.user_config_path}. "
-                "Please run 'msc config --user init' to initialize project configuration.",
-                flush=True,
-            )
-            print(
-                "NICETY: Optionally add the line: eval ''$(register-python-argcomplete mscthesis)'' "
-                "to your shell profile (.bashrc/.zshrc) for cli autocompletion. ",
-                flush=True,
-            )
-            return 1  # error code in the terminal
-        else:
-            return 1
+        print(
+            f"User config file not found at: {defaults.meta.user_config_path}. "
+            "Please run 'msc config --user init' to initialize project configuration.",
+            flush=True,
+        )
+        print(
+            "NICETY: Optionally add the line: eval ''$(register-python-argcomplete mscthesis)'' "
+            "to your shell profile (.bashrc/.zshrc) for cli autocompletion. ",
+            flush=True,
+        )
+        return 1  # error code in the terminal
     # if project config has been initialized
     else:
         # resolve config after PROJECT (cwd) > USER (home) > DEFAULTS (code)
@@ -143,37 +131,23 @@ def main(argv: list[str] | None = None) -> int:
         args.config = config  # pass resolved config to args for commands to use
         b = config.behavior
 
-        # force quiet mode if command executed with multiple workers (suppress logs on workers)
-        if is_mpi:
-            b.quiet = True
-            b.no_log = True if rank != 0 else b.no_log
-
         logger = setup_logging(
             b.storage_root / b.log_filename, b.log_level, b.quiet, b.no_log
         )
         if hasattr(args, "cmd"):
 
-            is_config_cmd = hasattr(args, "config_command")
+            start_time = time.perf_counter()
 
-            if is_mpi and is_config_cmd and rank != 0:
-                return 0
+            args.cmd(args)
 
-            if rank == 0:
-                start_time = time.perf_counter()
+            duration = time.perf_counter() - start_time
 
-                args.cmd(args, comm)
+            if not b.no_log:
+                exit_program_log(logger, duration)
 
-                duration = time.perf_counter() - start_time
-
-                if not b.no_log:
-                    exit_program_log(logger, duration)
-
-            else:
-                args.cmd(args, comm)
         else:
-            if rank == 0:
-                print(f"Unrecognized command: {argv}", flush=True)
-                parser.print_help()  # print top level help if not a valid command
+            print(f"Unrecognized command: {argv}", flush=True)
+            parser.print_help()  # print top level help if not a valid command
 
         return 0
 

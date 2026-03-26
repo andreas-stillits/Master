@@ -4,14 +4,12 @@ import argparse
 from pathlib import Path
 from typing import Any
 
-from mpi4py import MPI
-
 from ....config.declaration import ProjectConfig
 from ....config.helpers import load_config_from_file
 from ...shared import parse_string_value
 
 
-def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
+def _cmd(args: argparse.Namespace) -> None:
     """Command to set a configuration key to a specified value."""
     # get resolved config
     config: ProjectConfig = args.config

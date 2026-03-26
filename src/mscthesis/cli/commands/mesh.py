@@ -1,28 +1,22 @@
 from __future__ import annotations
 
 import argparse
-import os
-import subprocess
 
-from mpi4py import MPI
-
-from ...config.declaration import ProjectConfig, MeshingConfig
+from ...config.declaration import MeshingConfig
 from ...core.meshing.gmeshing import run_gmsh_session
-from ...utilities.paths import ProjectPaths
 from ..shared import (
     derive_cli_flags_from_config,
-    distribute_command_execution,
     document_command_execution,
+    setup_command,
 )
 
 CMD_NAME = "mesh"
 
 
-def _execute_single_sample_id(
-    paths: ProjectPaths, config: ProjectConfig, sample_id: str, size: int
-) -> None:
-    """Execute process for a single sample ID"""
-    # get resolved config
+def _cmd(args: argparse.Namespace) -> None:
+    """Command declaration"""
+    paths, config, sample_id = setup_command(args)
+
     cmdconfig: MeshingConfig = config.mesh
 
     input_path = paths.sample(sample_id).triangulation().require_brep()
@@ -47,7 +41,6 @@ def _execute_single_sample_id(
         process_paths,
         config,
         CMD_NAME,
-        size,
         sample_id,
         inputs={"brep_model": str(input_path.expanduser().resolve())},
         outputs={"volumetric_mesh": str(mesh_path.expanduser().resolve())},
@@ -55,11 +48,6 @@ def _execute_single_sample_id(
     )
 
     return
-
-
-def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
-    """Command declaration"""
-    return distribute_command_execution(args, comm, _execute_single_sample_id)
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -72,9 +60,9 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         epilog=f"msc {CMD_NAME} [options] <sample_id>",
     )
     parser.add_argument(
-        "sample_input",
+        "sample_id",
         type=str,
-        help="Either a valid sample ID or path to a text file containing sample IDs (one per line)",
+        help="A valid sample ID",
     )
     parser = derive_cli_flags_from_config(parser, CMD_NAME)
     parser.set_defaults(cmd=_cmd)

@@ -2,26 +2,22 @@ from __future__ import annotations
 
 import argparse
 
-from mpi4py import MPI
-
-from ....config.declaration import ProjectConfig, UniformSynthesisConfig
+from ....config.declaration import UniformSynthesisConfig
 from ....core.io import save_voxels
 from ....core.synthesis.uniform import generate_voxels_from_sample_id
-from ....utilities.paths import ProjectPaths
 from ...shared import (
     derive_cli_flags_from_config,
-    distribute_command_execution,
     document_command_execution,
+    setup_command,
 )
 
 CMD_NAME = "synthesize-uniform"
 
 
-def _execute_single_sample_id(
-    paths: ProjectPaths, config: ProjectConfig, sample_id: str, size: int
-) -> None:
-    """Execute process for a single sample ID"""
-    # get resolved config
+def _cmd(args: argparse.Namespace) -> None:
+    """Command declaration"""
+    paths, config, sample_id = setup_command(args)
+
     cmdconfig: UniformSynthesisConfig = config.synthesize_uniform
 
     # generate voxel model
@@ -46,7 +42,6 @@ def _execute_single_sample_id(
         process_paths,
         config,
         CMD_NAME,
-        size,
         sample_id,
         inputs={},
         outputs={"voxel_model": str(voxels_path.expanduser().resolve())},
@@ -54,11 +49,6 @@ def _execute_single_sample_id(
     )
 
     return
-
-
-def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
-    """Command declaration"""
-    return distribute_command_execution(args, comm, _execute_single_sample_id)
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -71,9 +61,9 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         epilog=f"msc {CMD_NAME} [options] <sample_id>",
     )
     parser.add_argument(
-        "sample_input",
+        "sample_id",
         type=str,
-        help="Either a valid sample ID or path to a text file containing sample IDs (one per line)",
+        help="A valid sample ID",
     )
     parser = derive_cli_flags_from_config(parser, CMD_NAME)
     parser.set_defaults(cmd=_cmd)

@@ -3,12 +3,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from mpi4py import MPI
-
 from ....config.declaration import ProjectConfig
 
 
-def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
+def _cmd(args: argparse.Namespace) -> None:
     config: ProjectConfig = (
         args.config
     )  # always a defaults instance due to cli.main:main structure

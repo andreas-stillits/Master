@@ -3,10 +3,7 @@ from __future__ import annotations
 import argparse
 import ast
 from pathlib import Path
-from typing import Any, Callable
-
-from mpi4py import MPI
-from tqdm import tqdm
+from typing import Any
 
 from ..config.declaration import LogLevel, ProjectConfig
 from ..config.helpers import deep_update, dump_resolved_command_config
@@ -161,76 +158,34 @@ def parse_string_value(raw: str) -> Any:
     return value
 
 
-def distribute_command_execution(
-    args: argparse.Namespace, comm: MPI.Intracomm, execute_single_sample_id: Callable
-) -> None:
-    """Command declaration"""
-    rank = comm.Get_rank()
-    size = comm.Get_size()
-
+def setup_command(args: argparse.Namespace) -> tuple[ProjectPaths, ProjectConfig, str]:
+    """Perform common pre-command tasks such as validating sample ID and resolving paths.
+    Args:
+        args (argparse.Namespace): The parsed CLI arguments.
+    Returns:
+        paths (ProjectPaths): The resolved project paths.
+        config (ProjectConfig): The resolved project configuration.
+        sample_id (str): The validated sample ID from the CLI arguments.
+    """
     paths: ProjectPaths = ProjectPaths(args.config.behavior.storage_root)
     paths.require_base()
     paths.ensure_samples_root()
     paths.ensure_inventories_root()
+    paths.ensure_processes_root()
+    paths.ensure_stats_root()
 
-    sample_ids = interpret_sample_input(
-        paths,
-        args.sample_input,
-        args.config.behavior.sample_id_digits,
-    )
+    config: ProjectConfig = args.config
 
-    # early exit if less samples than workers - also cathes the case of zero samples:
-    if rank >= len(sample_ids) or len(sample_ids) == 0:
-        return
+    sample_id = args.sample_id.strip()
+    sample_id = validate_sample_id(sample_id, config.behavior.sample_id_digits)
 
-    # distribute sample IDs among workers
-    assigned_sample_ids = sample_ids[rank::size]
-    if rank == 0 and size > 1:
-        for sample_id in tqdm(assigned_sample_ids, desc="processing samples..."):
-            execute_single_sample_id(paths, args.config, sample_id, size)
-    else:
-        for sample_id in assigned_sample_ids:
-            execute_single_sample_id(paths, args.config, sample_id, size)
-
-    return
-
-
-def interpret_sample_input(
-    paths: ProjectPaths, input: str, required_digits: int
-) -> list[str]:
-    """
-    Interpret the sample input argument and return a list of sample IDs
-    Args:
-        input (str): The sample input, either a single sample ID or a path to a text file
-                     containing multiple sample IDs (one per line).
-        required_digits (int): The required length of each sample ID.
-    Returns:
-        list[str]: A list of valid sample IDs.
-    """
-    sample_ids: list[str] = []
-    # check if input has .txt extension or begins with "@"
-    if input.startswith("@") or input.endswith(".txt"):
-        # expand path
-        input_path = resolve_existing_inventories_file(paths, input, ".txt")
-        # read sample IDs from file
-        with open(input_path, "r") as f:
-            for line in f:
-                sample_id = line.strip()
-                if sample_id and validate_sample_id(sample_id, required_digits):
-                    sample_ids.append(sample_id)
-    else:
-        # treat input as single sample ID
-        sample_id = input.strip()
-        if validate_sample_id(sample_id, required_digits):
-            sample_ids.append(sample_id)
-    return sample_ids
+    return paths, config, sample_id
 
 
 def document_command_execution(
     process_paths: ProcessPathsBase,
     config: ProjectConfig,
     command_name: str,
-    num_processes: int,
     sample_id: str,
     inputs: dict[str, str],
     outputs: dict[str, str],
@@ -239,13 +194,13 @@ def document_command_execution(
     """
     Document the execution of a command by dumping the resolved configuration and manifest.
     Args:
-        args (argparse.Namespace): The parsed CLI arguments.
-        process_paths (ProcessPathsBase): The process paths where documentation files will be saved.
+        process_paths (ProcessPathsBase): The process paths for the current sample.
+        config (ProjectConfig): The resolved project configuration for the command execution.
         command_name (str): The name of the executed command.
-        inputs (dict[str, str]): A dictionary of input file paths.
-        outputs (dict[str, str]): A dictionary of output file paths.
-        metadata (dict[str, Any]): Additional metadata about the execution.
-        status (str): The status of the execution (e.g., "success", "failure").
+        sample_id (str): The sample ID for which the command was executed.
+        inputs (dict[str, str]): A dictionary of input names and their values/paths.
+        outputs (dict[str, str]): A dictionary of output names and their values/paths.
+        metadata (dict[str, Any]): A dictionary of additional metadata to include in the manifest.
     """
     # optionally dump resolved command-relevant config
     if not config.behavior.no_cmdconfig:
@@ -256,7 +211,6 @@ def document_command_execution(
         dump_manifest(
             process_paths.manifest,
             command_name,
-            num_processes,
             sample_id,
             inputs,
             outputs,

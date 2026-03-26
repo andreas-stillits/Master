@@ -2,13 +2,11 @@ from __future__ import annotations
 
 import argparse
 
-from mpi4py import MPI
-
 from ....config.declaration import ProjectConfig
 from ....utilities.paths import ProjectPaths
 
 
-def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
+def _cmd(args: argparse.Namespace) -> None:
     """Command to update the inventory of available sample IDs."""
     config: ProjectConfig = args.config
     # get samples path
@@ -43,5 +41,4 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         help="Update the inventory of available sample IDs",
         epilog="Example: msc update-inventory \n",
     )
-
     parser.set_defaults(cmd=_cmd)

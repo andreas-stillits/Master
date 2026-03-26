@@ -2,20 +2,17 @@ from __future__ import annotations
 
 import argparse
 
-from mpi4py import MPI
-
 from ....config.declaration import ProjectConfig
 from ....utilities.paths import ProjectPaths
 
 
-def _cmd(args: argparse.Namespace, comm: MPI.Intracomm) -> None:
+def _cmd(args: argparse.Namespace) -> None:
     """Command to generate a view of samples, but by processes"""
     config: ProjectConfig = args.config
     # get samples path
     paths: ProjectPaths = ProjectPaths(config.behavior.storage_root)
     paths.require_base()
     paths.ensure_samples_root()
-    paths.ensure_inventories_root()
     paths.ensure_processes_root()
 
     # get sample IDs from inventory
