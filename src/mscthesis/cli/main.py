@@ -15,7 +15,7 @@ from .commands.config import init as config_init
 from .commands.config import set as config_set
 from .commands.config import show as config_show
 from .commands.synthesis import uniform as synthesize_uniform
-from .commands.utilities import inventory, view
+from .commands.utilities import inventory, stats_voxels, view
 from .shared import (
     assemble_cli_overrides,
     derive_cli_flags_from_config,
@@ -68,6 +68,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     # === OTHER COMMANDS ===
     inventory.add_parser(subparsers)
+    stats_voxels.add_parser(subparsers)
     view.add_parser(subparsers)
     synthesize_uniform.add_parser(subparsers)
     triangulate.add_parser(subparsers)

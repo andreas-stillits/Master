@@ -1,21 +1,18 @@
 from __future__ import annotations
 
-import csv
 import subprocess
-import sys
-from pathlib import Path
+from mpi4py import MPI
 
 import numpy as np
-
 
 SAMPLE_ID_BASE: int = 0
 SAMPLE_ID_DIGITS: int = 5
 
 RESOLUTION: int = 5
-NUM_CELL_MIN_FRACTION: float = 0.1
+NUM_CELL_MIN_FRACTION: float = 0.2
 CELL_RADII_MIN: float = 0.02
-PLUG_RADII: list[float] = [0.14]
-SEPARATION: float = 0.01
+PLUG_RADII: list[float] = [0.14, 0.25]
+SEPARATION: float = 0.005
 
 PLUG_RADIUS_KEY: str = "--plug-aspect"
 CELL_RADIUS_KEY: str = "--radius"
@@ -85,8 +82,16 @@ def _run_instance(
 
 def main() -> int:
     """Main function to generate the workload and run the synthesis process"""
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
     workload: list[tuple[str, float, float, int]] = _generate_workload()
-    for sample_id, plug_radius, cell_radius, num_cells in workload:
+    amount = len(workload)
+
+    work = workload[rank:amount:size]
+
+    for sample_id, plug_radius, cell_radius, num_cells in work:
         _run_instance(sample_id, plug_radius, cell_radius, num_cells)
 
     return 0

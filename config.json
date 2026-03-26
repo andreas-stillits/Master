@@ -11,7 +11,7 @@
   },
   "synthesize_uniform": {
     "base_seed": 123456,
-    "resolution": 100,
+    "resolution": 200,
     "plug_aspect": 0.25,
     "num_cells": 100,
     "radius": 0.08,

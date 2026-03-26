@@ -13,7 +13,11 @@ from .helpers import (
 
 @log_call()
 def _metadata(
-    random_seed: int, centers: np.ndarray, radii: np.ndarray, voxels: np.ndarray
+    random_seed: int,
+    plug_aspect: float,
+    centers: np.ndarray,
+    radii: np.ndarray,
+    voxels: np.ndarray,
 ) -> dict[str, Any]:
     """
     Generate metadata for a voxel model non-overlapping spheres.
@@ -29,6 +33,7 @@ def _metadata(
     """
     metadata: dict[str, Any] = {}
     metadata["random_seed"] = random_seed
+    metadata["plug_aspect"] = plug_aspect
     metadata["num_cells_placed"] = len(centers)
     metadata["min_radius"] = float(np.min(radii)) if len(radii) > 0 else 0.0
     metadata["mean_radius"] = float(np.mean(radii)) if len(radii) > 0 else 0.0
@@ -132,6 +137,7 @@ def generate_voxels_from_seed(
 
     metadata = _metadata(
         random_seed,
+        plug_aspect,
         centers,
         radii,
         voxels,
