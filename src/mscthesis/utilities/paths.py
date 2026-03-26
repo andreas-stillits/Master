@@ -220,6 +220,10 @@ class ProjectPaths:
     def processes(self) -> Path:
         return self.base / "processes"
 
+    @property
+    def stats(self) -> Path:
+        return self.base / "stats"
+
     def sample(self, sample_id: str) -> SamplePaths:
         return SamplePaths(self, sample_id)
 
@@ -238,6 +242,10 @@ class ProjectPaths:
     def ensure_processes_root(self) -> Path:
         self.require_base()
         return ensure_dir(self.processes)
+
+    def ensure_stats_root(self) -> Path:
+        self.require_base()
+        return ensure_dir(self.stats)
 
 
 @dataclass(frozen=True)
