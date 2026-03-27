@@ -279,6 +279,19 @@ class SamplePaths:
         self.paths.ensure_samples_root()
         return ensure_dir(self.dir)
 
+    def require_process(self, process_name: str) -> ProcessPathsBase:
+        self.require_dir()
+        if process_name == "synthesis":
+            return self.synthesis()
+        elif process_name == "triangulation":
+            return self.triangulation()
+        elif process_name == "meshing":
+            return self.meshing()
+        elif process_name == "solutions":
+            return self.solution()
+        else:
+            raise ValueError(f"Unknown process name: {process_name}")
+
 
 @dataclass(frozen=True)
 class ProcessPathsBase:
@@ -370,11 +383,11 @@ class MeshingPaths(ProcessPathsBase):
 
 @dataclass(frozen=True)
 class SolutionPaths(ProcessPathsBase):
-    name: str = "solution"
+    name: str = "solutions"
 
     @property
     def solution(self) -> Path:
-        return self.dir / "solution.csv"
+        return self.dir / "scan.csv"
 
     def require_solution(self) -> Path:
         self.require_dir()

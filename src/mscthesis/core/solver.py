@@ -110,7 +110,9 @@ class UniformSolver:
             "mesophyll_flux": float(mesophyll_flux),
         }
 
-    def solve_for(self, absorption: float, transport: float) -> fem.Function:
+    def solve_for(
+        self, absorption: float, transport: float
+    ) -> tuple[fem.Function, dict[str, Any]]:
         self.surface_coeff.value = default_scalar_type(
             absorption / self.mesophyll_area_fraction
         )
@@ -118,4 +120,4 @@ class UniformSolver:
             transport / self.stomatal_area_fraction
         )
         solution = self.problem.solve()
-        return self.analyze(solution)
+        return solution, self.analyze(solution)
