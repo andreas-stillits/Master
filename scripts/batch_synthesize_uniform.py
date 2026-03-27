@@ -9,10 +9,10 @@ COMMAND = "synthesize-uniform"
 SAMPLE_ID_BASE: int = 0
 SAMPLE_ID_DIGITS: int = 5
 
-RESOLUTION: int = 2
+RESOLUTION: int = 6
 NUM_CELL_MIN_FRACTION: float = 0.2
 CELL_RADII_MIN: float = 0.02
-PLUG_RADII: list[float] = [0.14, 0.25]
+PLUG_RADII: list[float] = [0.25]
 SEPARATION: float = 0.005
 
 CLI_FLAGS: tuple[str] = (
