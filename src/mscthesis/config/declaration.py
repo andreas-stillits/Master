@@ -173,24 +173,58 @@ class MeshingConfig(BaseModel):
     }
 
 
-class SolutionConfig(BaseModel):
+class SingleSolutionConfig(BaseModel):
     """Configuration for solver related settings"""
 
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra={"expose": True, "commands": ["solve"]},
+        json_schema_extra={"expose": True, "commands": ["single-solve"]},
     )
 
+    compensation: float = 0.1
     absorption: float = 1.0
     transport: float = 1.0
-    compensation: float = 0.1
+    stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
+    no_save: bool = False
 
     cli_hints: ClassVar[dict[str, str]] = {
         "absorption": "Absorption balance",
         "transport": "Transport Balance",
         "compensation": "Boundary condition value for the mesophyll flux",
+        "stomatal_aspect": "Aspect ratio of the stomatal pore",
         "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function",
+        "no_save": "Whether to save the solution to a file (put flag for true to skip saving)",
+    }
+
+
+class ScanningConfig(BaseModel):
+    """Configuration for scanning related settings"""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"expose": True, "commands": ["scan"]},
+    )
+
+    scan_resolution: int = 10
+
+    cli_hints: ClassVar[dict[str, str]] = {
+        "scan_resolution": "Resolution for scanning the sample (number of points along each axis)",
+    }
+
+
+class DiffusionConfig(BaseModel):
+    """Configuration for diffusion related settings"""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"expose": True, "commands": ["diffuse"]},
+    )
+
+    diffusion_coefficient: float = 1.0
+
+    cli_hints: ClassVar[dict[str, str]] = {
+        "diffusion_coefficient": "Diffusion coefficient for the diffusion simulation",
     }
 
 
@@ -203,7 +237,9 @@ class ProjectConfig(BaseModel):
     synthesize_uniform: UniformSynthesisConfig = UniformSynthesisConfig()
     triangulate: TriangulationConfig = TriangulationConfig()
     mesh: MeshingConfig = MeshingConfig()
-    solve: SolutionConfig = SolutionConfig()
+    single_solve: SingleSolutionConfig = SingleSolutionConfig()
+    scan: ScanningConfig = ScanningConfig()
+    diffuse: DiffusionConfig = DiffusionConfig()
 
     # helper function for filtering after model_config.json_schema_extra.expose
     def _filter_config_for_exposure(self) -> dict[str, Any]:

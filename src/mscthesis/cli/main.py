@@ -6,7 +6,7 @@ import time
 from ..config.declaration import ProjectConfig
 from ..config.helpers import build_project_config
 from ..utilities.log import exit_program_log, setup_logging
-from .commands import mesh, triangulate, visualize
+from .commands import mesh, single_solve, triangulate, visualize
 from .commands.config import copy as config_copy
 from .commands.config import get as config_get
 from .commands.config import init as config_init
@@ -72,6 +72,7 @@ def _build_parser() -> argparse.ArgumentParser:
     triangulate.add_parser(subparsers)
     mesh.add_parser(subparsers)
     visualize.add_parser(subparsers)
+    single_solve.add_parser(subparsers)
 
     # ... add more top-level commands here ...
     # either:

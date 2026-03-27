@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import ufl
 from dolfinx import default_scalar_type, fem
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import Mesh
+
+from mscthesis.config.declaration import ProjectConfig
+
+from ..core.io import load_volumetric_mesh, save_fem_solution
+from ..utilities.fetching import fetch_manifest_quantity
 
 AIRSPACE_TAG = 1
 TOP_TAG = 2
@@ -121,3 +127,65 @@ class UniformSolver:
         )
         solution = self.problem.solve()
         return solution, self.analyze(solution)
+
+
+def single_uniform_solution(
+    config: ProjectConfig,
+    input_path: str | Path,
+    output_path: str | Path,
+    sample_id: str,
+    compensation: float,
+    absorption: float,
+    transport: float,
+    stomatal_aspect: float,
+    stomatal_epsilon: float,
+    no_save: bool,
+) -> dict[str, Any]:
+    """
+    Determine the uniform solution for a given set of parameters and sample id
+    Args:
+        input_path: path to the input mesh file
+        output_path: path to the output solution file
+        sample_id: sample id for metadata purposes
+        compensation: boundary condition value for the mesophyll flux
+        absorption: absorption balance parameter
+        transport: transport balance parameter
+        stomatal_aspect: aspect ratio of the stomatal pore
+        stomatal_epsilon: smoothing parameter for the stomatal envelope function
+    Returns:
+        metadata: dictionary containing relevant metadata about the solution
+    """
+    mesh, cell_tags, facet_tags = load_volumetric_mesh(input_path)
+    data = fetch_manifest_quantity(
+        config, sample_id, "meshing", "plug_aspect", "mesophyll_area_fraction"
+    )
+    plug_aspect = data["plug_aspect"]
+    mesophyll_area_fraction = data["mesophyll_area_fraction"]
+    stomatal_area_fraction = (stomatal_aspect**2) / (plug_aspect**2)
+    solver = UniformSolver(
+        compensation,
+        plug_aspect,
+        stomatal_aspect,
+        stomatal_epsilon,
+        stomatal_area_fraction,
+        mesophyll_area_fraction,
+        mesh,
+        cell_tags,
+        facet_tags,
+        order=1,
+    )
+
+    solution, analysis = solver.solve_for(absorption, transport)
+
+    if not no_save:
+        save_fem_solution(solution, mesh, cell_tags, facet_tags, output_path)
+
+    return {
+        "compensation": compensation,
+        "absorption": absorption,
+        "transport": transport,
+        "stomatal_aspect": stomatal_aspect,
+        "stomatal_epsilon": stomatal_epsilon,
+        "stomatal_flux": analysis["stomatal_flux"],
+        "mesophyll_flux": analysis["mesophyll_flux"],
+    }

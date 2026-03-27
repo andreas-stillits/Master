@@ -35,10 +35,18 @@
     "substomatal_cavity_margin_fraction": 0.05,
     "tolerance": 0.01
   },
-  "solve": {
+  "single_solve": {
+    "compensation": 0.1,
     "absorption": 1.0,
     "transport": 1.0,
-    "compensation": 0.1,
-    "stomatal_epsilon": 0.002
+    "stomatal_aspect": 0.02,
+    "stomatal_epsilon": 0.002,
+    "no_save": false
+  },
+  "scan": {
+    "scan_resolution": 10
+  },
+  "diffuse": {
+    "diffusion_coefficient": 1.0
   }
 }

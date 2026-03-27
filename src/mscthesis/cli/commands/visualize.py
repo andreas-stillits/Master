@@ -3,13 +3,18 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from ...core.io import load_surface_mesh, load_voxels
+from ...core.io import load_fem_solution, load_surface_mesh, load_voxels
 from ...core.visualization import (
+    visualize_fem_solution,
     visualize_surface_mesh,
     visualize_volumetric_mesh,
     visualize_voxels,
 )
-from ...utilities.paths import ProjectPaths, resolve_existing_samples_file
+from ...utilities.paths import (
+    ProjectPaths,
+    require_extension,
+    resolve_samples_shorthand,
+)
 from ..shared import derive_cli_flags_from_config
 
 
@@ -20,9 +25,8 @@ def _cmd(args: argparse.Namespace) -> None:
     paths.require_base()
     paths.ensure_samples_root()
 
-    file_path: Path = resolve_existing_samples_file(
-        paths, args.file_path, ".npy", ".stl", ".msh"
-    )
+    file_path: Path = resolve_samples_shorthand(paths, args.file_path)
+    file_path = require_extension(file_path, ".npy", ".stl", ".msh", ".bp")
 
     # visualize based on file extension
     if file_path.suffix == ".npy":
@@ -35,6 +39,10 @@ def _cmd(args: argparse.Namespace) -> None:
 
     elif file_path.suffix == ".msh":
         visualize_volumetric_mesh(file_path)
+
+    elif file_path.suffix == ".bp":
+        solution, mesh, cell_tags, facet_tags = load_fem_solution(file_path)
+        visualize_fem_solution(solution, mesh, cell_tags, facet_tags)
 
     else:
         raise ValueError(

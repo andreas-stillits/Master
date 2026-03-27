@@ -267,8 +267,14 @@ class SamplePaths:
     def meshing(self) -> MeshingPaths:
         return MeshingPaths(self)
 
-    def solution(self) -> SolutionPaths:
-        return SolutionPaths(self)
+    def solving(self) -> SingleSolutionPaths:
+        return SingleSolutionPaths(self)
+
+    def scanning(self) -> ScanningPaths:
+        return ScanningPaths(self)
+
+    def diffusion(self) -> DiffusionPaths:
+        return DiffusionPaths(self)
 
     # verification
 
@@ -282,13 +288,35 @@ class SamplePaths:
     def require_process(self, process_name: str) -> ProcessPathsBase:
         self.require_dir()
         if process_name == "synthesis":
-            return self.synthesis()
+            synthesis = self.synthesis()
+            synthesis.require_dir()
+            return synthesis
+
         elif process_name == "triangulation":
-            return self.triangulation()
+            triangulation = self.triangulation()
+            triangulation.require_dir()
+            return triangulation
+
         elif process_name == "meshing":
-            return self.meshing()
-        elif process_name == "solutions":
-            return self.solution()
+            meshing = self.meshing()
+            meshing.require_dir()
+            return meshing
+
+        elif process_name == "solving":
+            solving = self.solving()
+            solving.require_dir()
+            return solving
+
+        elif process_name == "scanning":
+            scanning = self.scanning()
+            scanning.require_dir()
+            return scanning
+
+        elif process_name == "diffusion":
+            diffusion = self.diffusion()
+            diffusion.require_dir()
+            return diffusion
+
         else:
             raise ValueError(f"Unknown process name: {process_name}")
 
@@ -382,14 +410,42 @@ class MeshingPaths(ProcessPathsBase):
 
 
 @dataclass(frozen=True)
-class SolutionPaths(ProcessPathsBase):
-    name: str = "solutions"
+class SingleSolutionPaths(ProcessPathsBase):
+    name: str = "solving"
 
     @property
     def solution(self) -> Path:
-        return self.dir / "scan.csv"
+        return self.dir / "solution.bp"
 
     def require_solution(self) -> Path:
         self.require_dir()
         require_file(self.solution)
-        return require_extension(self.solution, ".csv")
+        return require_extension(self.solution, ".bp")
+
+
+@dataclass(frozen=True)
+class ScanningPaths(ProcessPathsBase):
+    name: str = "scanning"
+
+    @property
+    def scan(self) -> Path:
+        return self.dir / "dataframe.csv"
+
+    def require_scan(self) -> Path:
+        self.require_dir()
+        require_file(self.scan)
+        return require_extension(self.scan, ".csv")
+
+
+@dataclass(frozen=True)
+class DiffusionPaths(ProcessPathsBase):
+    name: str = "diffusion"
+
+    @property
+    def diffusion(self) -> Path:
+        return self.dir / "diffusion.json"
+
+    def require_diffusion(self) -> Path:
+        self.require_dir()
+        require_file(self.diffusion)
+        return require_extension(self.diffusion, ".json")
