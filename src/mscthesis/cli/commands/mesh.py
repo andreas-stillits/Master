@@ -28,8 +28,9 @@ def _cmd(args: argparse.Namespace) -> None:
     metadata = run_gmsh_session(
         input_path,
         mesh_path,
-        cmdconfig.stomatal_aspect,
-        cmdconfig.resolution_factor,
+        cmdconfig.global_resolution_factor,
+        cmdconfig.cell_resolution_factor,
+        cmdconfig.minimum_stomatal_aspect,
         cmdconfig.minimum_distance_factor,
         cmdconfig.maximum_distance_factor,
         cmdconfig.boundary_margin_fraction,

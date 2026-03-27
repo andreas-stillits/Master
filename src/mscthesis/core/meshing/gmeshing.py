@@ -25,22 +25,16 @@ def _silent_initialize(*args, **kwargs) -> None:
 
 def _metadata(
     plug_aspect: float,
-    stomatal_aspect: float,
     mesophyll_area: float,
 ) -> dict[str, Any]:
     """Collect relevant metadata from the meshing process to be stored with the command execution record"""
     plug_area = np.pi * plug_aspect**2
-    stomatal_area = np.pi * stomatal_aspect**2
-    stomatal_area_fraction = stomatal_area / plug_area
     mesophyll_area_fraction = mesophyll_area / plug_area
 
     return {
         "plug_aspect": plug_aspect,
-        "stomatal_aspect": stomatal_aspect,
         "plug_area": plug_area,
-        "stomatal_area": stomatal_area,
         "mesophyll_area": mesophyll_area,
-        "stomatal_area_fraction": stomatal_area_fraction,
         "mesophyll_area_fraction": mesophyll_area_fraction,
     }
 
@@ -302,7 +296,7 @@ def assign_physical_groups(
 
 
 @log_call()
-def configure_meshfield(
+def configure_meshfield_old(
     tags: dict[str, Any],
     plug_aspect: float,
     stomatal_aspect: float,
@@ -358,11 +352,71 @@ def configure_meshfield(
 
 
 @log_call()
+def configure_meshfield(
+    tags: dict[str, Any],
+    plug_aspect: float,
+    global_resolution_factor: float,
+    cell_resolution_factor: float,
+    minimum_stomatal_aspect: float,
+    minimum_distance_factor: float,
+    maximum_distance_factor: float,
+) -> None:
+    """
+    Configure the mesh size field in gmsh.
+    Args:
+        tags (dict[str, list[int] | int]): Dictionary containing tags for physical groups
+        stomatal_aspect (float): Aspect ratio of the stomatal cavity.
+        stomatal_epsilon (float): Epsilon value for the stomatal cavity.
+        global_resolution_factor (float): Factor to adjust global resolution.
+        cell_resolution_factor (float): Factor to adjust cell resolution.
+        minimum_distance_factor (float): Factor to adjust minimum distance.
+        maximum_distance_factor (float): Factor to adjust maximum distance.
+    """
+
+    # Calculate resolution and distance parameters based on the provided factors and the size of the plug
+    minimum_resolution = minimum_stomatal_aspect * global_resolution_factor
+    maximum_resolution = plug_aspect * global_resolution_factor
+    minimum_distance = minimum_stomatal_aspect * minimum_distance_factor
+    maximum_distance = minimum_stomatal_aspect * maximum_distance_factor
+
+    # control distance to abaxial inlet surface
+    inlet_distance = field.add("Distance")
+    field.setNumbers(inlet_distance, "FacesList", [tags["bottom_area_tag"]])
+    inlet_threshold = field.add("Threshold")
+    field.setNumber(inlet_threshold, "InField", inlet_distance)
+    field.setNumber(inlet_threshold, "LcMin", minimum_resolution)
+    field.setNumber(inlet_threshold, "LcMax", maximum_resolution)
+    field.setNumber(inlet_threshold, "DistMin", minimum_distance)
+    field.setNumber(inlet_threshold, "DistMax", maximum_distance)
+    #
+    # control distance to mesophyll cell surfaces
+    mesophyll_distance = field.add("Distance")
+    field.setNumbers(mesophyll_distance, "FacesList", tags["mesophyll_surface_tags"])
+    mesophyll_threshold = field.add("Threshold")
+    field.setNumber(mesophyll_threshold, "InField", mesophyll_distance)
+    field.setNumber(
+        mesophyll_threshold, "LcMin", cell_resolution_factor * minimum_resolution
+    )
+    field.setNumber(mesophyll_threshold, "LcMax", maximum_resolution)
+    field.setNumber(mesophyll_threshold, "DistMin", minimum_distance)
+    field.setNumber(mesophyll_threshold, "DistMax", maximum_distance)
+    #
+    minimum_field = field.add("Min")
+    field.setNumbers(
+        minimum_field, "FieldsList", [mesophyll_threshold, inlet_threshold]
+    )
+    field.setAsBackgroundMesh(minimum_field)
+    kernel.synchronize()
+    return
+
+
+@log_call()
 def run_gmsh_session(
     brep_file: str | Path,
     output_mesh_file: str | Path,
-    stomatal_aspect: float,
-    resolution_factor: float,
+    global_resolution_factor: float,
+    cell_resolution_factor: float,
+    minimum_stomatal_aspect: float,
     minimum_distance_factor: float,
     maximum_distance_factor: float,
     boundary_margin_fraction: float,
@@ -392,8 +446,9 @@ def run_gmsh_session(
     configure_meshfield(
         tags,
         plug_aspect,
-        stomatal_aspect,
-        resolution_factor,
+        global_resolution_factor,
+        cell_resolution_factor,
+        minimum_stomatal_aspect,
         minimum_distance_factor,
         maximum_distance_factor,
     )
@@ -401,4 +456,4 @@ def run_gmsh_session(
     gmsh.model.mesh.generate(3)
     gmsh.write(str(output_mesh_file))
 
-    return _metadata(plug_aspect, stomatal_aspect, mesophyll_area)
+    return _metadata(plug_aspect, mesophyll_area)

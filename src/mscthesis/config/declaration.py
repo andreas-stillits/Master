@@ -152,8 +152,9 @@ class MeshingConfig(BaseModel):
         json_schema_extra={"expose": True, "commands": ["mesh"]},
     )
 
-    stomatal_aspect: float = 0.02
-    resolution_factor: float = 4.0
+    global_resolution_factor: float = 0.25
+    cell_resolution_factor: float = 4.0
+    minimum_stomatal_aspect: float = 0.02
     minimum_distance_factor: float = 3.0
     maximum_distance_factor: float = 10.0
     boundary_margin_fraction: float = 0.05
@@ -161,8 +162,9 @@ class MeshingConfig(BaseModel):
     tolerance: float = 0.01
 
     cli_hints: ClassVar[dict[str, str]] = {
-        "stomatal_aspect": "Ratio of stomatal radius to plug thickness/height",
-        "resolution_factor": "Factor to determine meshing resolution based plug dimensions",
+        "global_resolution_factor": "Factor to determine global meshing resolution based on plug dimensions",
+        "cell_resolution_factor": "Factor to determine cell-specific meshing resolution",
+        "minimum_stomatal_aspect": "Minimum aspect ratio of stomatal pore to ensure meshing stability",
         "minimum_distance_factor": "Minimum distance factor for mesh field to have minimal spacing",
         "maximum_distance_factor": "Maximum distance factor for mesh field to have maximal spacing",
         "boundary_margin_fraction": "Margin fraction for minimum distance to outer edges",
