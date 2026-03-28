@@ -6,12 +6,11 @@ import logging
 import sys
 import time
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, TypeVar, cast
 
 import numpy as np
-
-from ..config.declaration import LogLevel, ProjectConfig
 
 # we use this "placeholder type" to make sure that typechecking can still resolve
 # type hints even after decoration. It allows the function we decorate to pass through
@@ -20,10 +19,17 @@ from ..config.declaration import LogLevel, ProjectConfig
 GhostType = TypeVar(
     "GhostType", bound=Callable[..., Any]
 )  # decorated object is always a callable (bound)
-meta = ProjectConfig().meta  # get meta config for magic strings
 
 
-def _summarize_value(value: Any, max_length: int = meta.log_summary_max_length) -> str:
+class LogLevel(str, Enum):
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
+
+
+def _summarize_value(value: Any, max_length: int = 32) -> str:
     """
     Crude but practical value summarizer that acts as a Any -> str filter
     Args:
@@ -115,12 +121,13 @@ def log_call(
             # start timer
             start = time.perf_counter()
             # initial log entry: what level, what function, what inputs?
+            msg: str = "_entry"
             logger.log(
                 level,
-                meta.log_call_start_msg,
+                msg,
                 extra={
-                    meta.log_call_func_key: qualname,
-                    meta.log_call_details_key: f"args = {call_args}",
+                    "_func": qualname,
+                    "_details": f"args = {call_args}",
                 },
             )
             # attempt to execute the function, handle if error
@@ -130,12 +137,13 @@ def log_call(
                 # if an error, stop the timer
                 duration = time.perf_counter() - start
                 # record that an error occured
+                error_msg: str = "_error"
                 logger.error(
-                    meta.log_call_error_msg,
+                    error_msg,
                     exc_info=True,
                     extra={
-                        meta.log_call_func_key: qualname,
-                        meta.log_call_details_key: f"args: {call_args} | error_type = {type(exc).__name__} | error_msg = {str(exc)}",
+                        "_func": qualname,
+                        "_details": f"args: {call_args} | error_type = {type(exc).__name__} | error_msg = {str(exc)}",
                     },
                 )
                 raise  # re-raise the error
@@ -143,12 +151,13 @@ def log_call(
             # if the function executed without error, stop timer
             duration = time.perf_counter() - start
             # commit log entry for end function call
+            msg: str = "_exit"
             logger.log(
                 level,
-                meta.log_call_end_msg,
+                msg,
                 extra={
-                    meta.log_call_func_key: qualname,
-                    meta.log_call_details_key: f"duration: {duration:.3f} s, \t\t results: {_summarize_value(result) if include_result else '-'}",
+                    "_func": qualname,
+                    "_details": f"duration: {duration:.3f} s, \t\t results: {_summarize_value(result) if include_result else '-'}",
                 },
             )
             return result
@@ -176,8 +185,8 @@ def setup_logging(
     level = builtins.getattr(
         logging, log_level
     )  # translate LogLevel enum to logging.LEVEL int
-    func_key = meta.log_call_func_key
-    details_key = meta.log_call_details_key
+    func_key = "_func"
+    details_key = "_details"
     #
     fmt = f"%(asctime)-8s | %(levelname)-8s | %({func_key})-32s | %({details_key})s"
     #
@@ -226,10 +235,11 @@ def exit_program_log(logger: logging.Logger, duration: float) -> None:
         logger (logging.Logger): The logger instance to use.
         duration (float): The total duration of the program execution in seconds.
     """
+    msg: str = "_program_exit"
     logger.info(
-        "program_exit",
+        msg,
         extra={
-            meta.log_call_func_key: ".cli.main",
-            meta.log_call_details_key: f"duration: {duration:.3f} s  in total",
+            "_func": ".cli.main",
+            "_details": f"duration: {duration:.3f} s  in total",
         },
     )

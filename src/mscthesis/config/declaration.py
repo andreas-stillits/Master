@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
-from enum import Enum
 from pathlib import Path
 from typing import Any, ClassVar
 
 from pydantic import BaseModel
 from pydantic.config import ConfigDict
+
+from ..utilities.log import LogLevel
 
 # === CHOICES ===
 """ 
@@ -43,22 +44,6 @@ class MetaConfig(BaseModel):
     config_name: str = "config.json"  # bound in utilities.paths as well
     user_config_path: Path = Path.home() / f".{project_name}" / config_name
     project_config_path: Path = Path.cwd() / config_name
-    # magic strings and numbers -- underscores are to avoid name collision with internal logging fields
-    log_summary_max_length: int = 32
-    log_call_start_msg: str = "_entry"
-    log_call_end_msg: str = "_exit"
-    log_call_error_msg: str = "_error"
-    log_call_func_key: str = "_func"
-    log_call_details_key: str = "_details"
-
-
-# tiner helper class for clearer errors when user alters default logging level
-class LogLevel(str, Enum):
-    DEBUG = "DEBUG"
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
-    CRITICAL = "CRITICAL"
 
 
 class BehaviorConfig(BaseModel):
