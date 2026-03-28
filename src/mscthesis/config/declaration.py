@@ -173,12 +173,12 @@ class MeshingConfig(BaseModel):
     }
 
 
-class SingleSolutionConfig(BaseModel):
+class UniformSolutionConfig(BaseModel):
     """Configuration for solver related settings"""
 
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra={"expose": True, "commands": ["single-solve"]},
+        json_schema_extra={"expose": True, "commands": ["solve-uniform"]},
     )
 
     compensation: float = 0.1
@@ -186,6 +186,7 @@ class SingleSolutionConfig(BaseModel):
     transport: float = 1.0
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
+    order: int = 1
     no_save: bool = False
 
     cli_hints: ClassVar[dict[str, str]] = {
@@ -194,6 +195,7 @@ class SingleSolutionConfig(BaseModel):
         "compensation": "Boundary condition value for the mesophyll flux",
         "stomatal_aspect": "Aspect ratio of the stomatal pore",
         "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function",
+        "order": "Order of the finite element method",
         "no_save": "Whether to save the solution to a file (put flag for true to skip saving)",
     }
 
@@ -257,7 +259,7 @@ class ProjectConfig(BaseModel):
     synthesize_uniform: UniformSynthesisConfig = UniformSynthesisConfig()
     triangulate: TriangulationConfig = TriangulationConfig()
     mesh: MeshingConfig = MeshingConfig()
-    single_solve: SingleSolutionConfig = SingleSolutionConfig()
+    solve_uniform: UniformSolutionConfig = UniformSolutionConfig()
     scan: ScanningConfig = ScanningConfig()
     diffuse: DiffusionConfig = DiffusionConfig()
 

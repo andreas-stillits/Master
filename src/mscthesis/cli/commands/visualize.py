@@ -41,8 +41,8 @@ def _cmd(args: argparse.Namespace) -> None:
         visualize_volumetric_mesh(file_path)
 
     elif file_path.suffix == ".bp":
-        solution, mesh, cell_tags, facet_tags = load_fem_solution(file_path)
-        visualize_fem_solution(solution, mesh, cell_tags, facet_tags)
+        solution, mesh_ctx = load_fem_solution(file_path)
+        visualize_fem_solution(solution, mesh_ctx.mesh)
 
     else:
         raise ValueError(

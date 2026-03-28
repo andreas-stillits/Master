@@ -2,22 +2,28 @@ from __future__ import annotations
 
 import argparse
 
-from ...config.declaration import SingleSolutionConfig
-from ...core.solvers import single_uniform_solution
+from ...config.declaration import UniformSolutionConfig
+from ...core.io import load_volumetric_mesh, save_fem_solution
+from ...core.solvers import (
+    MeshContext,
+    UniformSolver,
+    UniformSolverConfig,
+)
+from ...utilities.fetching import fetch_manifest_quantity
 from ..shared import (
     derive_cli_flags_from_config,
     document_command_execution,
     setup_command,
 )
 
-CMD_NAME = "single-solve"
+CMD_NAME = "solve-uniform"
 
 
 def _cmd(args: argparse.Namespace) -> None:
     """Command declaration"""
     paths, config, sample_id = setup_command(args)
 
-    cmdconfig: SingleSolutionConfig = config.single_solve
+    cmdconfig: UniformSolutionConfig = config.solve_uniform
 
     input_path = paths.sample(sample_id).meshing().require_mesh()
 
@@ -31,18 +37,46 @@ def _cmd(args: argparse.Namespace) -> None:
             f"{solution_path.stem}_{args.extension}{solution_path.suffix}"
         )
 
-    metadata = single_uniform_solution(
+    fetched_data = fetch_manifest_quantity(
         config,
-        input_path,
-        solution_path,
         sample_id,
+        "meshing",
+        "plug_aspect",
+        "mesophyll_area_fraction",
+    )
+
+    plug_aspect = fetched_data["plug_aspect"]
+    stomatal_area_fraction = cmdconfig.stomatal_aspect**2 / plug_aspect**2
+    mesophyll_area_fraction = fetched_data["mesophyll_area_fraction"]
+
+    solver_config = UniformSolverConfig(
         cmdconfig.compensation,
-        cmdconfig.absorption,
-        cmdconfig.transport,
+        plug_aspect,
         cmdconfig.stomatal_aspect,
         cmdconfig.stomatal_epsilon,
-        cmdconfig.no_save,
+        stomatal_area_fraction,
+        mesophyll_area_fraction,
+        cmdconfig.order,
     )
+
+    mesh_ctx: MeshContext = load_volumetric_mesh(input_path)
+
+    solver = UniformSolver(
+        solver_config,
+        mesh_ctx,
+    )
+
+    solution, analysis = solver.solve_for(
+        cmdconfig.absorption,
+        cmdconfig.transport,
+    )
+
+    if not cmdconfig.no_save:
+        save_fem_solution(solution, mesh_ctx, solution_path)
+
+    metadata = {
+        **analysis,
+    }
 
     document_command_execution(
         process_paths,

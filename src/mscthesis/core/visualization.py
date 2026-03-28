@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import cast
 
 import gmsh
 import numpy as np
@@ -61,17 +61,13 @@ def visualize_volumetric_mesh(mesh_path: str | Path) -> None:
 
 
 @log_call()
-def visualize_fem_solution(
-    solution: fem.Function, mesh: Mesh, cell_tags: Any, facet_tags: Any
-) -> None:
+def visualize_fem_solution(solution: fem.Function, mesh: Mesh) -> None:
     """
-    Visualize a finite element solution using PyVista
-    Args:
-        solution (fem.Function): The finite element solution to visualize
-        mesh (Mesh): The mesh on which the solution is defined
-        cell_tags (Any): The cell tags for the mesh
-        facet_tags (Any): The facet tags for the mesh
-    """
+        Visualize a finite element solution using PyVista
+        Args:
+            solution (fem.Function): The finite element solution to visualize
+            mesh (Mesh): The mesh on which the solution is defined
+    <"""
     topology, cell_types, geometry = vtk_mesh(mesh, mesh.topology.dim)
     grid = pv.UnstructuredGrid(topology, cell_types, geometry)
     grid.point_data["solution"] = solution.x.array.real
@@ -80,15 +76,16 @@ def visualize_fem_solution(
 
     p = pv.Plotter()
     zcenters = [
-        0.02,
-        0.22,
-        0.42,
-        0.62,
-        0.82,
-        0.98,
+        0.01,
+        0.20,
+        0.40,
+        0.60,
+        0.80,
+        0.99,
     ]
     for zc in zcenters:
         slices = grid.slice(normal="z", origin=(0, 0, zc * (zmax - zmin) + zmin))
+        slices = cast(pv.MultiBlock, slices)
         p.add_mesh(slices, scalars="solution", cmap="magma", clim=[0.00, 1.00])
     p.add_mesh(grid.outline(), color="k")
     p.show_axes()

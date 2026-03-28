@@ -35,12 +35,13 @@
     "substomatal_cavity_margin_fraction": 0.05,
     "tolerance": 0.01
   },
-  "single_solve": {
+  "solve_uniform": {
     "compensation": 0.1,
     "absorption": 1.0,
     "transport": 1.0,
     "stomatal_aspect": 0.02,
     "stomatal_epsilon": 0.002,
+    "order": 1,
     "no_save": false
   },
   "scan": {
