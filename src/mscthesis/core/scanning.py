@@ -110,7 +110,7 @@ def distribute_batches(
     mesh_file: str | Path,
     solver_config: SolverConfig,
     solver_class: type[BaseSolver],
-    max_workers,
+    max_workers: int,
 ) -> list[dict[str, Any]]:
     """
     Distribute the workload across multiple processes.
@@ -119,7 +119,7 @@ def distribute_batches(
         mesh_file (str | Path): Path to the volumetric mesh file.
         solver_config (SolverConfig): Configuration for the solver.
         solver_class (type[BaseSolver]): The solver class to instantiate.
-        max_workers: The maximum number of worker processes to use.
+        max_workers (int): The maximum number of worker processes to use.
     Returns:
         results (list[dict[str, Any]]): A list of dictionaries containing the simulation results from all batches.
     """

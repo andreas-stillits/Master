@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 import gmsh
 import numpy as np
@@ -100,7 +100,6 @@ def build_gmsh_model(
         entities (list[tuple[int, int]]): List of (dim, tag) tuples
         boundary_margin_fraction (float): Margin fraction for minimal distance to plug boundary
         substomatal_cavity_margin_fraction (float): Margin fraction for minimal distance to the stomatal surface
-        tolerance (float): Tolerance for iterative transformations to exit as sufficient
     Returns:
         list[tuple[int, int]]: List of (dim, tag) tuples representing the airspace entity
     """
@@ -160,6 +159,7 @@ def build_gmsh_model(
             )  # recurvsive=True will remove all lower dimensional entities shared at the boundary
 
     kernel.synchronize()
+    largest_volume_tag = cast(int, largest_volume_tag)
     airspace = [(3, largest_volume_tag)]
 
     # Iteratively apply affine transformation to airspace to center bottom surface at origin and scale height to 1
@@ -296,62 +296,6 @@ def assign_physical_groups(
 
 
 @log_call()
-def configure_meshfield_old(
-    tags: dict[str, Any],
-    plug_aspect: float,
-    stomatal_aspect: float,
-    resolution_factor: float,
-    minimum_distance_factor: float,
-    maximum_distance_factor: float,
-) -> None:
-    """
-    Configure the mesh size field in gmsh.
-    Args:
-        tags (dict[str, list[int] | int]): Dictionary containing tags for physical groups
-        stomatal_aspect (float): Aspect ratio of the stomatal cavity.
-        stomatal_epsilon (float): Epsilon value for the stomatal cavity.
-        resolution_factor (float): Factor to adjust resolution.
-        minimum_distance_factor (float): Factor to adjust minimum distance.
-        maximum_distance_factor (float): Factor to adjust maximum distance.
-    """
-    # Calculate resolution and distance parameters based on the provided factors and the size of the plug
-    minimum_resolution = stomatal_aspect / resolution_factor
-    maximum_resolution = plug_aspect / resolution_factor
-    minimum_distance = stomatal_aspect * minimum_distance_factor
-    maximum_distance = stomatal_aspect * maximum_distance_factor
-
-    point_tag = kernel.addPoint(0.0, 0.0, 0.0, 1.0)
-    kernel.synchronize()
-
-    boundary_distance = field.add("Distance")
-    field.setNumbers(boundary_distance, "NodesList", [point_tag])
-    boundary_threshold = field.add("Threshold")
-    field.setNumber(boundary_threshold, "InField", boundary_distance)
-    field.setNumber(boundary_threshold, "LcMin", minimum_resolution)
-    field.setNumber(boundary_threshold, "LcMax", maximum_resolution)
-    field.setNumber(boundary_threshold, "DistMin", minimum_distance)
-    field.setNumber(boundary_threshold, "DistMax", maximum_distance)
-
-    # control distance to mesophyll cell surfaces
-    mesophyll_distance = field.add("Distance")
-    field.setNumbers(mesophyll_distance, "FacesList", tags["mesophyll_surface_tags"])
-    mesophyll_threshold = field.add("Threshold")
-    field.setNumber(mesophyll_threshold, "InField", mesophyll_distance)
-    field.setNumber(mesophyll_threshold, "LcMin", 2 * minimum_resolution)
-    field.setNumber(mesophyll_threshold, "LcMax", maximum_resolution)
-    field.setNumber(mesophyll_threshold, "DistMin", minimum_distance)
-    field.setNumber(mesophyll_threshold, "DistMax", maximum_distance)
-    #
-    minimum_field = field.add("Min")
-    field.setNumbers(
-        minimum_field, "FieldsList", [mesophyll_threshold, boundary_threshold]
-    )
-    field.setAsBackgroundMesh(minimum_field)
-    kernel.synchronize()
-    return
-
-
-@log_call()
 def configure_meshfield(
     tags: dict[str, Any],
     plug_aspect: float,
@@ -365,8 +309,8 @@ def configure_meshfield(
     Configure the mesh size field in gmsh.
     Args:
         tags (dict[str, list[int] | int]): Dictionary containing tags for physical groups
+        plug_aspect (float): Aspect ratio of the plug (radius/height)
         stomatal_aspect (float): Aspect ratio of the stomatal cavity.
-        stomatal_epsilon (float): Epsilon value for the stomatal cavity.
         global_resolution_factor (float): Factor to adjust global resolution.
         cell_resolution_factor (float): Factor to adjust cell resolution.
         minimum_distance_factor (float): Factor to adjust minimum distance.
@@ -428,6 +372,16 @@ def run_gmsh_session(
     Args:
         brep_file (str | Path): Path to the input BREP file.
         output_mesh_file (str | Path): Path to the output mesh file.
+        global_resolution_factor (float): Factor to adjust global resolution.
+        cell_resolution_factor (float): Factor to adjust cell resolution.
+        minimum_stomatal_aspect (float): Minimum aspect ratio of the stomatal cavity to be resolved.
+        minimum_distance_factor (float): Factor to adjust minimum distance for mesh refinement.
+        maximum_distance_factor (float): Factor to adjust maximum distance for mesh refinement.
+        boundary_margin_fraction (float): Margin fraction for minimal distance to plug boundary.
+        substomatal_cavity_margin_fraction (float): Margin fraction for minimal distance to the stomatal surface.
+        tolerance (float): Tolerance for identifying curved face.
+    Returns:
+        dict[str, Any]: Metadata dictionary containing relevant information about the meshing process and the resulting mesh.
     """
     _silent_initialize()
     gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)

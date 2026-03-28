@@ -24,6 +24,7 @@ def _metadata(
 
     Args:
         random_seed (int): Seed used for random number generation.
+        plug_aspect (float): Ratio of plug radius to plug thickness/height.
         centers (np.ndarray): Array of cell centers of shape (N, 3).
         radii (np.ndarray): Array of cell radii of shape (N,).
         voxels (np.ndarray): The generated voxel model of shape (X, Y, Z).
@@ -46,6 +47,9 @@ def _metadata(
     metadata["mean_porosity"] = 1.0 - float(np.sum(voxels) / voxels.size)
     metadata["std_porosity"] = float(
         np.std(1.0 - np.sum(voxels, axis=(0, 1)) / (voxels.shape[0] * voxels.shape[1]))
+    )
+    metadata["mesophyll_area_fraction"] = float(
+        len(centers) * 4 * np.sum(radii**2) / plug_aspect**2
     )
     metadata["type"] = "uniform_spheres"
     metadata["success"] = True

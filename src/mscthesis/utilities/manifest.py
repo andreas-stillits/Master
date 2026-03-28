@@ -28,7 +28,6 @@ def dump_manifest(
         inputs (dict[str, Any]): Dictionary of input file paths used.
         outputs (dict[str, Any]): Dictionary of output file paths generated.
         metadata (dict[str, Any]): Additional metadata to include in the manifest.
-        success (bool): Status of the command execution.
         tool_version (str): Version of the tool used.
     """
     manifest: dict[str, Any] = {}

@@ -21,7 +21,7 @@ def load_voxels(file_path: str | Path) -> np.ndarray:
     Load a 3D voxel grid from a .npy file.
 
     Args:
-        filepath (str | Path): Path to the .npy file containing the voxel grid.
+        file_path (str | Path): Path to the .npy file containing the voxel grid.
 
     Returns:
         np.ndarray: The loaded 3D voxel grid.
@@ -37,7 +37,7 @@ def save_voxels(voxels: np.ndarray, file_path: str | Path) -> None:
 
     Args:
         voxels (np.ndarray): 3D numpy array representing the voxel model.
-        filename (str | Path): The output filename for the .npy file.
+        file_path (str | Path): The output file path for the .npy file.
     """
     np.save(file_path, voxels)
     return
@@ -93,7 +93,7 @@ def load_volumetric_mesh(file_path: str | Path) -> MeshContext:
     Args:
         file_path (str | Path): Path to the Gmsh .msh file.
     Returns:
-        tuple[Mesh, Any, Any]: The loaded volumetric mesh, cell tags, and facet tags.
+        MeshContext: A MeshContext object containing the mesh and associated tags.
     """
     # override the gmsh.initialize() call in gmshio to suppress output
     gmsh.initialize = _quiet_initialize

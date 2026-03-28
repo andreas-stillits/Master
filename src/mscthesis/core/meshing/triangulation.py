@@ -48,7 +48,7 @@ def _metadata(
         pre_volume (float): Volume before processing.
         post_volume (float): Volume after processing.
         shrinkage_tolerance (float): Tolerance for acceptable shrinkage.
-        status (str): Status of the triangulation process.
+        success (bool): Whether the triangulation was successful (manifold and watertight).
 
     Returns:
         dict[str, Any]: Metadata dictionary.
@@ -90,6 +90,10 @@ def triangulate_voxels(
     Args:
         voxels (np.ndarray): 3D numpy array of shape (X, Y, Z) with binary values,
             where 1 indicates presence of tissue and 0 indicates airspace.
+        smoothing_iterations (int): Number of iterations for Taubin smoothing.
+        decimation_target (int): Target number of triangles after mesh decimation.
+        shrinkage_tolerance (float): Maximum acceptable shrinkage ratio for area and volume.
+        spacing (Iterable[float]): Voxel spacing in each dimension (dx, dy, dz).
 
     Returns:
         o3d.geometry.TriangleMesh: The triangulated mesh.

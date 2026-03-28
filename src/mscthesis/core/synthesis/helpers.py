@@ -29,12 +29,12 @@ def initialize_meshgrid(
     Initialize a 3D meshgrid for voxel generation.
 
     Args:
-        planar_resolution (int): Number of voxels along the x and y axes.
-        axial_resolution (int): Number of voxels along the z axis.
+        plug_aspect (float): Ratio of plug radius to plug thickness/height.
+        resolution (int): Number of voxels along the z axis (axial resolution).
 
     Returns:
-        tuple[np.ndarray, tuple[np.ndarray, np.ndarray, np.ndarray]]:
-            A tuple containing the empty voxel grid and the meshgrid arrays (X, Y, Z).
+        A tuple containing the empty voxel grid (np.ndarray[tuple[int, int, int]])
+        and the meshgrid arrays (X, Y, Z) (tuple[np.ndarray, np.ndarray, np.ndarray]).
     """
     planar_resolution = int(2 * plug_aspect * resolution)
     x = np.linspace(-plug_aspect, plug_aspect, planar_resolution)
