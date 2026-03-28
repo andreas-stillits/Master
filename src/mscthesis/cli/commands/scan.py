@@ -12,7 +12,7 @@ from ...core.scanning import (
     generate_workload,
 )
 from ...core.solvers import UniformSolver, UniformSolverConfig
-from ...utilities.fetching import fetch_manifest_quantity
+from ...utilities.fetching import fetch_manifest_quantities
 from ..shared import (
     derive_cli_flags_from_config,
     document_command_execution,
@@ -46,10 +46,8 @@ def _cmd(args: argparse.Namespace) -> None:
         cmdconfig.transport_num,
     )
 
-    fetched_data = fetch_manifest_quantity(
-        config,
-        sample_id,
-        "meshing",
+    fetched_data = fetch_manifest_quantities(
+        paths.sample(sample_id).require_process("meshing").require_manifest(),
         "plug_aspect",
         "mesophyll_area_fraction",
     )
