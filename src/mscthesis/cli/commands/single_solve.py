@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 
 from ...config.declaration import SingleSolutionConfig
-from ...core.solver import single_uniform_solution
+from ...core.solvers import single_uniform_solution
 from ..shared import (
     derive_cli_flags_from_config,
     document_command_execution,

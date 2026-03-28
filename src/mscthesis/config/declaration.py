@@ -206,10 +206,30 @@ class ScanningConfig(BaseModel):
         json_schema_extra={"expose": True, "commands": ["scan"]},
     )
 
-    scan_resolution: int = 10
+    absorption_min: float = 0.01
+    absorption_max: float = 100.0
+    absorption_num: int = 10
+    transport_min: float = 0.01
+    transport_max: float = 100.0
+    transport_num: int = 10
+    compensation: float = 0.1
+    stomatal_aspect: float = 0.02
+    stomatal_epsilon: float = 0.002
+    order: int = 1
+    max_workers: int = 16
 
     cli_hints: ClassVar[dict[str, str]] = {
-        "scan_resolution": "Resolution for scanning the sample (number of points along each axis)",
+        "absorption_min": "Minimum absorption value for scanning",
+        "absorption_max": "Maximum absorption value for scanning",
+        "absorption_num": "Number of absorption values to scan",
+        "transport_min": "Minimum transport value for scanning",
+        "transport_max": "Maximum transport value for scanning",
+        "transport_num": "Number of transport values to scan",
+        "compensation": "Boundary condition value for the mesophyll flux",
+        "stomatal_aspect": "Aspect ratio of the stomatal pore",
+        "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function",
+        "order": "Order of the finite element method",
+        "max_workers": "Maximum number of worker processes for parallel execution",
     }
 
 

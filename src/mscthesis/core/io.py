@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 import adios4dolfinx as a4x
 import gmsh
 import numpy as np
 import open3d as o3d
+import pandas as pd
 from dolfinx import fem
 from dolfinx.io import gmshio
-from dolfinx.mesh import Mesh
 from mpi4py import MPI
 
+from ..core.solvers import MeshContext
 from ..utilities.log import log_call
 
 
@@ -86,7 +86,7 @@ def _quiet_initialize(*args, **kwargs):
 
 
 @log_call()
-def load_volumetric_mesh(file_path: str | Path) -> tuple[Mesh, Any, Any]:
+def load_volumetric_mesh(file_path: str | Path) -> MeshContext:
     """
     Load a volumetric mesh from a Gmsh file.
 
@@ -100,45 +100,69 @@ def load_volumetric_mesh(file_path: str | Path) -> tuple[Mesh, Any, Any]:
     mesh, cell_tags, facet_tags = gmshio.read_from_msh(
         file_path, MPI.COMM_SELF, 0, gdim=3
     )
-    return mesh, cell_tags, facet_tags
+
+    mesh_ctx = MeshContext(
+        mesh,
+        cell_tags,
+        facet_tags,
+    )
+
+    return mesh_ctx
 
 
 @log_call()
 def save_fem_solution(
     solution: fem.Function,
-    mesh: Mesh,
-    cell_tags: Any,
-    facet_tags: Any,
+    mesh_ctx: MeshContext,
     file_path: str | Path,
 ) -> None:
     """
     Save FEniCSx solution as a .bp file
     Args:
         solution (fem.Function): The FEniCSx solution to save.
-        mesh (Mesh): The mesh on which the solution is defined.
-        cell_tags (Any): The cell tags associated with the mesh.
-        facet_tags (Any): The facet tags associated with the mesh.
+        mesh_ctx (MeshContext): The mesh context containing the mesh and tags.
+        file_path (str | Path): The output filename for the .bp file.
     """
-    a4x.write_mesh(file_path, mesh)
-    a4x.write_meshtags(file_path, mesh, cell_tags, meshtag_name="cell_tags")
-    a4x.write_meshtags(file_path, mesh, facet_tags, meshtag_name="facet_tags")
+    file_path = Path(file_path)
+    a4x.write_mesh(file_path, mesh_ctx.mesh)
+    a4x.write_meshtags(
+        file_path, mesh_ctx.mesh, mesh_ctx.cell_tags, meshtag_name="cell_tags"
+    )
+    a4x.write_meshtags(
+        file_path, mesh_ctx.mesh, mesh_ctx.facet_tags, meshtag_name="facet_tags"
+    )
     a4x.write_function(file_path, solution, name="solution")
     return
 
 
 @log_call()
-def load_fem_solution(file_path: str | Path) -> tuple[fem.Function, Mesh, Any, Any]:
+def load_fem_solution(file_path: str | Path) -> tuple[fem.Function, MeshContext]:
     """
     Load a FEniCSx solution from a .bp file
     Args:
         file_path (str | Path): The path to the .bp file containing the solution.
     Returns:
-        tuple[fem.Function, Mesh, Any, Any]: The loaded solution, mesh, cell tags, and facet tags.
+        tuple[fem.Function, MeshContext]: The loaded solution and mesh context.
     """
+    file_path = Path(file_path)
     mesh = a4x.read_mesh(file_path, MPI.COMM_SELF)
     cell_tags = a4x.read_meshtags(file_path, mesh, meshtag_name="cell_tags")
     facet_tags = a4x.read_meshtags(file_path, mesh, meshtag_name="facet_tags")
     functionspace = fem.functionspace(mesh, ("Lagrange", 1))
     solution = fem.Function(functionspace)
-    a4x.read_function(file_path, solution, name="solution")
-    return solution, mesh, cell_tags, facet_tags
+    a4x.read_function(file_path, solution, name="solution")  # type: ignore[reportArgumentType]
+    mesh_ctx = MeshContext(mesh, cell_tags, facet_tags)
+    return solution, mesh_ctx  # type: ignore[reportArgumentType]
+
+
+@log_call()
+def save_dataframe(dataframe: pd.DataFrame, file_path: str | Path) -> None:
+    """
+    Save a pandas DataFrame to a .csv file.
+
+    Args:
+        dataframe (pd.DataFrame): The DataFrame to save.
+        file_path (str | Path): The output filename for the .csv file.
+    """
+    dataframe.to_csv(file_path, decimal=",", sep="\t")
+    return
