@@ -18,7 +18,7 @@ class BatchContext:
         command: str,
         cli_flags: tuple[str],
         executable: str = "msc",
-        global_flags: tuple[str] = ("--quiet", "--no-log"),
+        global_flags: tuple = ("--quiet", "--no-log"),
     ) -> None:
         self.max_workers: int = max_workers
         self.generator: Callable[..., list[tuple]] = generator
