@@ -12,7 +12,7 @@ from ...core.scanning import (
 )
 from ...core.solvers import UniformSolver, UniformSolverConfig
 from ...utilities.fetching import fetch_manifest_quantities
-from ...utilities.parallelizing import distribute, generate_batches_round_robin
+from ...utilities.parallel import distribute, generate_batches_round_robin
 from ..shared import (
     derive_cli_flags_from_config,
     document_command_execution,
