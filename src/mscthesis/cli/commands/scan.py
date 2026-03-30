@@ -7,12 +7,12 @@ import pandas as pd
 from ...config.declaration import ScanningConfig
 from ...core.io import save_dataframe
 from ...core.scanning import (
-    distribute_batches,
-    generate_batches_round_robin,
     generate_workload,
+    run_batch,
 )
 from ...core.solvers import UniformSolver, UniformSolverConfig
 from ...utilities.fetching import fetch_manifest_quantities
+from ...utilities.parallelizing import distribute, generate_batches_round_robin
 from ..shared import (
     derive_cli_flags_from_config,
     document_command_execution,
@@ -69,8 +69,13 @@ def _cmd(args: argparse.Namespace) -> None:
     workload = generate_workload(absorption_range, transport_range)
     batches = generate_batches_round_robin(workload, cmdconfig.max_workers)
 
-    results = distribute_batches(
-        batches, mesh_path, solver_config, UniformSolver, cmdconfig.max_workers
+    results = distribute(
+        run_batch,
+        batches,
+        cmdconfig.max_workers,
+        mesh_path,
+        solver_config,
+        UniformSolver,
     )
 
     dataframe = pd.DataFrame(results)

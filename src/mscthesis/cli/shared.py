@@ -12,7 +12,6 @@ from ..utilities.manifest import dump_manifest
 from ..utilities.paths import (
     ProcessPathsBase,
     ProjectPaths,
-    resolve_existing_inventories_file,
 )
 
 
@@ -72,7 +71,7 @@ def derive_cli_flags_from_config(
 
         for key, value in cli_overrides.items():  # passes if empty {}
             flag = "--" + key.replace("_", "-")
-            if isinstance(value, bool):  # contract to defines bools as store_true flags
+            if isinstance(value, bool):  # contract to define bools as store_true flags
                 parser.add_argument(
                     flag, action="store_true", help=cli_hints.get(key, "")
                 )

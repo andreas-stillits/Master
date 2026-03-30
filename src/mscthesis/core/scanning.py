@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -44,30 +43,38 @@ def generate_workload(
     return workload
 
 
-@log_call()
-def generate_batches_round_robin(
-    workload: list[tuple[float, float]], num_batches: int
-) -> list[list[tuple[float, float]]]:
-    """
-    Distribute workload roughly equally into num_batches batches using Round-Robin distribution.
-    Args:
-        workload (list[(float, float)]): A list of (absorption, transport) pairs.
-        num_batches (int): The number of batches to distribute the workload into.
-    Returns:
-        batches (list[list[tuple]]): A list of batches, each containing a list of (absorption, transport) pairs.
-    """
-    batches: list[list[tuple[float, float]]] = [[] for _ in range(num_batches)]
+# @log_call()
+# def generate_batches(
+#     workload: list[tuple[float, float]],
+#     num_batches: int,
+# ) -> list[list[tuple[float, float]]]:
+#     return generate_batches_round_robin(workload, num_batches)
 
-    for i, work in enumerate(workload):
-        batches[i % num_batches].append(work)
 
-    return [batch for batch in batches if batch]  # avoid empty batches
+# @log_call()
+# def generate_batches_round_robin(
+#     workload: list[tuple[float, float]], num_batches: int
+# ) -> list[list[tuple[float, float]]]:
+#     """
+#     Distribute workload roughly equally into num_batches batches using Round-Robin distribution.
+#     Args:
+#         workload (list[(float, float)]): A list of (absorption, transport) pairs.
+#         num_batches (int): The number of batches to distribute the workload into.
+#     Returns:
+#         batches (list[list[tuple]]): A list of batches, each containing a list of (absorption, transport) pairs.
+#     """
+#     batches: list[list[tuple[float, float]]] = [[] for _ in range(num_batches)]
+
+#     for i, work in enumerate(workload):
+#         batches[i % num_batches].append(work)
+
+#     return [batch for batch in batches if batch]  # avoid empty batches
 
 
 @log_call()
 def run_batch(
-    mesh_file: str | Path,
     batch: list[tuple[float, float]],
+    mesh_file: str | Path,
     solver_config: SolverConfig,
     solver_class: type[BaseSolver],
 ) -> list[dict[str, Any]]:
@@ -104,36 +111,49 @@ def run_batch(
     return results
 
 
-@log_call()
-def distribute_batches(
-    batches: list[list[tuple[float, float]]],
-    mesh_file: str | Path,
-    solver_config: SolverConfig,
-    solver_class: type[BaseSolver],
-    max_workers: int,
-) -> list[dict[str, Any]]:
-    """
-    Distribute the workload across multiple processes.
-    Args:
-        batches (list[list[tuple]]): A list of batches, each containing a list of (absorption, transport) pairs.
-        mesh_file (str | Path): Path to the volumetric mesh file.
-        solver_config (SolverConfig): Configuration for the solver.
-        solver_class (type[BaseSolver]): The solver class to instantiate.
-        max_workers (int): The maximum number of worker processes to use.
-    Returns:
-        results (list[dict[str, Any]]): A list of dictionaries containing the simulation results from all batches.
-    """
+# @log_call()
+# def distribute_batches(
+#     batches: list[list[tuple[float, float]]],
+#     max_workers: int,
+#     mesh_file: str | Path,
+#     solver_config: SolverConfig,
+#     solver_class: type[BaseSolver],
+# ) -> list[dict[str, Any]]:
+#     return distribute(
+#         run_batch, batches, max_workers, mesh_file, solver_config, solver_class
+#     )
 
-    results: list[dict[str, Any]] = []
 
-    with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        futures = [
-            executor.submit(run_batch, mesh_file, batch, solver_config, solver_class)
-            for batch in batches
-        ]
+# @log_call()
+# def distribute_batches(
+#     batches: list[list[tuple[float, float]]],
+#     mesh_file: str | Path,
+#     solver_config: SolverConfig,
+#     solver_class: type[BaseSolver],
+#     max_workers: int,
+# ) -> list[dict[str, Any]]:
+#     """
+#     Distribute the workload across multiple processes.
+#     Args:
+#         batches (list[list[tuple]]): A list of batches, each containing a list of (absorption, transport) pairs.
+#         mesh_file (str | Path): Path to the volumetric mesh file.
+#         solver_config (SolverConfig): Configuration for the solver.
+#         solver_class (type[BaseSolver]): The solver class to instantiate.
+#         max_workers (int): The maximum number of worker processes to use.
+#     Returns:
+#         results (list[dict[str, Any]]): A list of dictionaries containing the simulation results from all batches.
+#     """
 
-        for future in as_completed(futures):
-            batch_results = future.result()
-            results.extend(batch_results)
+#     results: list[dict[str, Any]] = []
 
-    return results
+#     with ProcessPoolExecutor(max_workers=max_workers) as executor:
+#         futures = [
+#             executor.submit(run_batch, mesh_file, batch, solver_config, solver_class)
+#             for batch in batches
+#         ]
+
+#         for future in as_completed(futures):
+#             batch_results = future.result()
+#             results.extend(batch_results)
+
+#     return results
