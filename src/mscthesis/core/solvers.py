@@ -174,7 +174,9 @@ class BaseSolver:
         }
 
     def solve_for(
-        self, absorption: float, transport: float
+        self,
+        *args,
+        **kwargs,
     ) -> tuple[fem.Function, dict[str, Any]]:
         raise NotImplementedError("Must be implemented by subclass.")
 
@@ -237,66 +239,55 @@ class UniformSolver(BaseSolver):
 # ------------------------------------------------------------------------
 
 
-# def single_uniform_solution(
-#     config: ProjectConfig,
-#     input_path: str | Path,
-#     output_path: str | Path,
-#     sample_id: str,
-#     compensation: float,
-#     absorption: float,
-#     transport: float,
-#     stomatal_aspect: float,
-#     stomatal_epsilon: float,
-#     no_save: bool,
-# ) -> dict[str, Any]:
-#     """
-#     Determine the uniform solution for a given set of parameters and sample id
-#     Args:
-#         input_path: path to the input mesh file
-#         output_path: path to the output solution file
-#         sample_id: sample id for metadata purposes
-#         compensation: boundary condition value for the mesophyll flux
-#         absorption: absorption balance parameter
-#         transport: transport balance parameter
-#         stomatal_aspect: aspect ratio of the stomatal pore
-#         stomatal_epsilon: smoothing parameter for the stomatal envelope function
-#     Returns:
-#         metadata: dictionary containing relevant metadata about the solution
-#     """
-#     mesh_ctx: MeshContext = load_volumetric_mesh(input_path)
-#     data = fetch_manifest_quantity(
-#         config, sample_id, "meshing", "plug_aspect", "mesophyll_area_fraction"
-#     )
-#     plug_aspect = data["plug_aspect"]
-#     mesophyll_area_fraction = data["mesophyll_area_fraction"]
-#     stomatal_area_fraction = (stomatal_aspect**2) / (plug_aspect**2)
+# ------------------------------------------------------------------------
+# DIFFUSION SOLVER
+# ------------------------------------------------------------------------
 
-#     solver_config = UniformSolverConfig(
-#         compensation,
-#         plug_aspect,
-#         stomatal_aspect,
-#         stomatal_epsilon,
-#         stomatal_area_fraction,
-#         mesophyll_area_fraction,
-#         order=1,
-#     )
 
-#     solver = UniformSolver(
-#         solver_config,
-#         mesh_ctx,
-#     )
+@dataclass
+class DiffusionSolverConfig(SolverConfig):
+    pass
 
-#     solution, analysis = solver.solve_for(absorption, transport)
 
-#     if not no_save:
-#         save_fem_solution(solution, mesh_ctx, output_path)
+class DiffusionSolver(BaseSolver):
+    def __init__(
+        self, solver_config: DiffusionSolverConfig, mesh_ctx: MeshContext
+    ) -> None:
+        super().__init__(solver_config, mesh_ctx)
+        #
+        chi = ufl.TrialFunction(self.functionspace)
+        v = ufl.TestFunction(self.functionspace)
 
-#     return {
-#         "compensation": compensation,
-#         "absorption": absorption,
-#         "transport": transport,
-#         "stomatal_aspect": stomatal_aspect,
-#         "stomatal_epsilon": stomatal_epsilon,
-#         "stomatal_flux": analysis["stomatal_flux"],
-#         "mesophyll_flux": analysis["mesophyll_flux"],
-#     }
+        #
+        top_facets = self.facet_tags.find(TOP_TAG)
+        top_dofs = fem.locate_dofs_topological(
+            self.functionspace, self.mesh.topology.dim - 1, top_facets
+        )
+
+        self.boundary_conc = fem.Constant(self.mesh, default_scalar_type(0.0))
+        bc = fem.dirichletbc(self.boundary_conc, top_dofs, self.functionspace)
+
+        a = ufl.inner(ufl.grad(chi), ufl.grad(v)) * self.dx(
+            AIRSPACE_TAG
+        ) + self.stomatal_coeff * self.envelope * chi * v * self.ds(BOTTOM_TAG)
+        L = self.stomatal_coeff * self.envelope * v * self.ds(BOTTOM_TAG)
+
+        self.problem = LinearProblem(
+            a,
+            L,
+            bcs=[bc],
+            petsc_options={
+                "ksp_type": "cg",
+                "ksp_rtol": 1e-8,
+                "pc_type": "hypre",
+                "pc_hypre_type": "boomeramg",
+            },
+        )
+
+    def solve_for(
+        self, transport: float, boundary_conc: float
+    ) -> tuple[fem.Function, dict[str, Any]]:
+        self.boundary_conc.value = default_scalar_type(boundary_conc)
+        self.stomatal_coeff.value = default_scalar_type(transport)
+        solution = self.problem.solve()
+        return solution, self.analyze(solution)
