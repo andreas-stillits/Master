@@ -208,6 +208,12 @@ class BaseSolver:
             "airspace_variance": airspace_variance,
             "surface_mean": surface_mean_conc,
             "surface_variance": surface_variance,
+            "plug_area": self.plug_area,
+            "stomatal_area": self.stomatal_area,
+            "mesophyll_area": self.mesophyll_area,
+            "stomatal_area_fraction": self.stomatal_area_fraction,
+            "mesophyll_area_fraction": self.mesophyll_area_fraction,
+            "porosity": self.airspace_volume / self.plug_area,
         }
 
     def solve_for(

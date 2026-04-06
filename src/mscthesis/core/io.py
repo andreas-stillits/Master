@@ -166,3 +166,17 @@ def save_dataframe(dataframe: pd.DataFrame, file_path: str | Path) -> None:
     """
     dataframe.to_csv(file_path, decimal=",", sep="\t")
     return
+
+
+@log_call()
+def load_dataframe(file_path: str | Path) -> pd.DataFrame:
+    """
+    Load a pandas DataFrame from a .csv file.
+
+    Args:
+        file_path (str | Path): The path to the .csv file containing the DataFrame.
+    Returns:
+        pd.DataFrame: The loaded DataFrame.
+    """
+    dataframe = pd.read_csv(file_path, decimal=",", sep="\t")
+    return dataframe

@@ -268,6 +268,10 @@ class ValidationPaths:
     def dir(self) -> Path:
         return self.paths.base / "validation" / self.tag
 
+    @property
+    def results(self) -> Path:
+        return self.dir / "results.csv"
+
     def require_dir(self) -> Path:
         return require_dir(self.dir)
 
@@ -279,9 +283,9 @@ class ValidationPaths:
         self.ensure_dir()
         return ensure_dir(self.dir / "meshes")
 
-    def ensure_results_dir(self) -> Path:
+    def ensure_solutions_dir(self) -> Path:
         self.ensure_dir()
-        return ensure_dir(self.dir / "results")
+        return ensure_dir(self.dir / "solutions")
 
     def ensure_plots_dir(self) -> Path:
         self.ensure_dir()
