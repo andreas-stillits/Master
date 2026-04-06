@@ -36,11 +36,12 @@
     "tolerance": 0.01
   },
   "solve_uniform": {
-    "compensation": 0.1,
     "absorption": 1.0,
     "transport": 1.0,
+    "compensation": 0.1,
     "stomatal_aspect": 0.02,
     "stomatal_epsilon": 0.002,
+    "ksp_rtol": 1e-08,
     "order": 1,
     "no_save": false
   },
@@ -54,6 +55,7 @@
     "compensation": 0.1,
     "stomatal_aspect": 0.02,
     "stomatal_epsilon": 0.002,
+    "ksp_rtol": 1e-08,
     "order": 1,
     "max_workers": 16
   },

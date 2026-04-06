@@ -166,11 +166,12 @@ class UniformSolutionConfig(BaseModel):
         json_schema_extra={"expose": True, "commands": ["solve-uniform"]},
     )
 
-    compensation: float = 0.1
     absorption: float = 1.0
     transport: float = 1.0
+    compensation: float = 0.1
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
+    ksp_rtol: float = 1e-8
     order: int = 1
     no_save: bool = False
 
@@ -180,6 +181,7 @@ class UniformSolutionConfig(BaseModel):
         "compensation": "Boundary condition value for the mesophyll flux",
         "stomatal_aspect": "Aspect ratio of the stomatal pore",
         "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function",
+        "ksp_rtol": "Relative tolerance for the KSP solver",
         "order": "Order of the finite element method",
         "no_save": "Whether to save the solution to a file (put flag for true to skip saving)",
     }
@@ -202,6 +204,7 @@ class ScanningConfig(BaseModel):
     compensation: float = 0.1
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
+    ksp_rtol: float = 1e-8
     order: int = 1
     max_workers: int = 16
 
@@ -215,6 +218,7 @@ class ScanningConfig(BaseModel):
         "compensation": "Boundary condition value for the mesophyll flux",
         "stomatal_aspect": "Aspect ratio of the stomatal pore",
         "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function",
+        "ksp_rtol": "Relative tolerance for the KSP solver",
         "order": "Order of the finite element method",
         "max_workers": "Maximum number of worker processes for parallel execution",
     }

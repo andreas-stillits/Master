@@ -11,7 +11,6 @@ from ...core.scanning import (
     run_batch,
 )
 from ...core.solvers import UniformSolver, UniformSolverConfig
-from ...utilities.fetching import fetch_manifest_quantities
 from ...utilities.parallel import distribute, generate_batches_round_robin
 from ..shared import (
     derive_cli_flags_from_config,
@@ -46,27 +45,16 @@ def _cmd(args: argparse.Namespace) -> None:
         cmdconfig.transport_num,
     )
 
-    fetched_data = fetch_manifest_quantities(
-        paths.sample(sample_id).require_process("meshing").require_manifest(),
-        "plug_aspect",
-        "mesophyll_area_fraction",
-    )
-
-    plug_aspect = fetched_data["plug_aspect"]
-    stomatal_area_fraction = cmdconfig.stomatal_aspect**2 / plug_aspect**2
-    mesophyll_area_fraction = fetched_data["mesophyll_area_fraction"]
-
     solver_config = UniformSolverConfig(
-        cmdconfig.compensation,
-        plug_aspect,
         cmdconfig.stomatal_aspect,
         cmdconfig.stomatal_epsilon,
-        stomatal_area_fraction,
-        mesophyll_area_fraction,
+        cmdconfig.ksp_rtol,
         cmdconfig.order,
     )
 
-    workload = generate_workload(absorption_range, transport_range)
+    workload = generate_workload(
+        absorption_range, transport_range, cmdconfig.compensation
+    )
     batches = generate_batches_round_robin(workload, cmdconfig.max_workers)
 
     results = distribute(
