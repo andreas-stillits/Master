@@ -224,6 +224,13 @@ class ProjectPaths:
     def stats(self) -> Path:
         return self.base / "stats"
 
+    @property
+    def validation(self) -> Path:
+        return self.base / "validation"
+
+    def validate(self, tag: str) -> ValidationPaths:
+        return ValidationPaths(self, tag)
+
     def sample(self, sample_id: str) -> SamplePaths:
         return SamplePaths(self, sample_id)
 
@@ -246,6 +253,39 @@ class ProjectPaths:
     def ensure_stats_root(self) -> Path:
         self.require_base()
         return ensure_dir(self.stats)
+
+    def ensure_validation_root(self) -> Path:
+        self.require_base()
+        return ensure_dir(self.validation)
+
+
+@dataclass(frozen=True)
+class ValidationPaths:
+    paths: ProjectPaths
+    tag: str
+
+    @property
+    def dir(self) -> Path:
+        return self.paths.base / "validation" / self.tag
+
+    def require_dir(self) -> Path:
+        return require_dir(self.dir)
+
+    def ensure_dir(self) -> Path:
+        self.paths.require_base()
+        return ensure_dir(self.dir)
+
+    def ensure_mesh_dir(self) -> Path:
+        self.ensure_dir()
+        return ensure_dir(self.dir / "meshes")
+
+    def ensure_results_dir(self) -> Path:
+        self.ensure_dir()
+        return ensure_dir(self.dir / "results")
+
+    def ensure_plots_dir(self) -> Path:
+        self.ensure_dir()
+        return ensure_dir(self.dir / "plots")
 
 
 @dataclass(frozen=True)
