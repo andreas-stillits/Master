@@ -179,6 +179,8 @@ class BaseSolver:
                 )
             )
             / self.mesophyll_area
+            if self.mesophyll_area > 0.0
+            else 0.0
         )
 
         # mean square cell surface concentration
@@ -189,6 +191,8 @@ class BaseSolver:
                 )
             )
             / self.mesophyll_area
+            if self.mesophyll_area > 0.0
+            else 0.0
         )
 
         # Calculate square-root of variances

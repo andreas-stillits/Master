@@ -138,10 +138,10 @@ class MeshingConfig(BaseModel):
     )
 
     global_resolution_factor: float = 0.25
-    cell_resolution_factor: float = 4.0
+    cell_resolution_factor: float = 2.0
     minimum_stomatal_aspect: float = 0.02
     minimum_distance_factor: float = 3.0
-    maximum_distance_factor: float = 10.0
+    maximum_distance_factor: float = 6.0
     boundary_margin_fraction: float = 0.05
     substomatal_cavity_margin_fraction: float = 0.05
     tolerance: float = 0.01
@@ -172,7 +172,7 @@ class UniformSolutionConfig(BaseModel):
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
     ksp_rtol: float = 1e-8
-    order: int = 1
+    order: int = 2
     no_save: bool = False
 
     cli_hints: ClassVar[dict[str, str]] = {
@@ -205,7 +205,7 @@ class ScanningConfig(BaseModel):
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
     ksp_rtol: float = 1e-8
-    order: int = 1
+    order: int = 2
     max_workers: int = 16
 
     cli_hints: ClassVar[dict[str, str]] = {
