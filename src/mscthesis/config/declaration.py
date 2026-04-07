@@ -137,21 +137,33 @@ class MeshingConfig(BaseModel):
         json_schema_extra={"expose": True, "commands": ["mesh"]},
     )
 
-    global_resolution_factor: float = 0.25
-    cell_resolution_factor: float = 2.0
-    minimum_stomatal_aspect: float = 0.02
-    minimum_distance_factor: float = 3.0
-    maximum_distance_factor: float = 6.0
+    global_resolution_factor: float = 1.0
+    min_stomatal_feature: float = 0.005
+    min_cellular_feature: float = 0.005
+    min_stomatal_dist_factor: float = 4.0
+    max_stomatal_dist_factor: float = 8.0
+    min_cellular_dist_factor: float = 4.0
+    max_cellular_dist_factor: float = 8.0
+    min_boundary_dist_factor: float = 2.0
+    max_boundary_dist_factor: float = 4.0
+    min_points_boundary: int = 24
+    max_points_boundary: int = 48
     boundary_margin_fraction: float = 0.05
     substomatal_cavity_margin_fraction: float = 0.05
     tolerance: float = 0.01
 
     cli_hints: ClassVar[dict[str, str]] = {
         "global_resolution_factor": "Factor to determine global meshing resolution based on plug dimensions",
-        "cell_resolution_factor": "Factor to determine cell-specific meshing resolution",
-        "minimum_stomatal_aspect": "Minimum aspect ratio of stomatal pore to ensure meshing stability",
-        "minimum_distance_factor": "Minimum distance factor for mesh field to have minimal spacing",
-        "maximum_distance_factor": "Maximum distance factor for mesh field to have maximal spacing",
+        "min_stomatal_feature": "Minimum feature size for stomatal pores",
+        "min_cellular_feature": "Minimum feature size for cellular structures",
+        "min_stomatal_dist_factor": "Minimum distance factor for stomatal pores",
+        "max_stomatal_dist_factor": "Maximum distance factor for stomatal pores",
+        "min_cellular_dist_factor": "Minimum distance factor for cellular structures",
+        "max_cellular_dist_factor": "Maximum distance factor for cellular structures",
+        "min_boundary_dist_factor": "Minimum distance factor for outer boundary",
+        "max_boundary_dist_factor": "Maximum distance factor for outer boundary",
+        "min_points_boundary": "Minimum number of points to place along the outer boundary -> sets global max resolution",
+        "max_points_boundary": "Maximum number of points to place along the outer boundary -> sets boundary min resolution",
         "boundary_margin_fraction": "Margin fraction for minimum distance to outer edges",
         "substomatal_cavity_margin_fraction": "Margin fraction for minimum distance to substomatal cavity (bottom of the plug)",
         "tolerance": "Tolerance for meshing operations",
@@ -172,7 +184,7 @@ class UniformSolutionConfig(BaseModel):
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
     ksp_rtol: float = 1e-8
-    order: int = 2
+    order: int = 1
     no_save: bool = False
 
     cli_hints: ClassVar[dict[str, str]] = {
@@ -205,7 +217,7 @@ class ScanningConfig(BaseModel):
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
     ksp_rtol: float = 1e-8
-    order: int = 2
+    order: int = 1
     max_workers: int = 16
 
     cli_hints: ClassVar[dict[str, str]] = {

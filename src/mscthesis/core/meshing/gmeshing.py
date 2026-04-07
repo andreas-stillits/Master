@@ -300,10 +300,16 @@ def configure_meshfield(
     tags: dict[str, Any],
     plug_aspect: float,
     global_resolution_factor: float,
-    cell_resolution_factor: float,
-    minimum_stomatal_aspect: float,
-    minimum_distance_factor: float,
-    maximum_distance_factor: float,
+    min_stomatal_feature: float,
+    min_cellular_feature: float,
+    min_stomatal_dist_factor: float,
+    max_stomatal_dist_factor: float,
+    min_cellular_dist_factor: float,
+    max_cellular_dist_factor: float,
+    min_boundary_dist_factor: float,
+    max_boundary_dist_factor: float,
+    min_points_boundary: int,
+    max_points_boundary: int,
 ) -> None:
     """
     Configure the mesh size field in gmsh.
@@ -316,38 +322,62 @@ def configure_meshfield(
         minimum_distance_factor (float): Factor to adjust minimum distance.
         maximum_distance_factor (float): Factor to adjust maximum distance.
     """
-
     # Calculate resolution and distance parameters based on the provided factors and the size of the plug
-    minimum_resolution = minimum_stomatal_aspect * global_resolution_factor
-    maximum_resolution = plug_aspect * global_resolution_factor
-    minimum_distance = minimum_stomatal_aspect * minimum_distance_factor
-    maximum_distance = minimum_stomatal_aspect * maximum_distance_factor
+    min_stomatal_res = min_stomatal_feature * global_resolution_factor
+    min_cellular_res = min_cellular_feature * global_resolution_factor
+    min_boundary_res = (
+        2 * np.pi * plug_aspect / max_points_boundary * global_resolution_factor
+    )
+    max_global_res = (
+        2 * np.pi * plug_aspect / min_points_boundary * global_resolution_factor
+    )
+    #
+    min_stomatal_dist = min_stomatal_feature * min_stomatal_dist_factor
+    max_stomatal_dist = min_stomatal_feature * max_stomatal_dist_factor
+    min_cellular_dist = min_cellular_feature * min_cellular_dist_factor
+    max_cellular_dist = min_cellular_feature * max_cellular_dist_factor
+    min_boundary_dist = (
+        min_boundary_res * min_boundary_dist_factor / global_resolution_factor
+    )
+    max_boundary_dist = (
+        min_boundary_res * max_boundary_dist_factor / global_resolution_factor
+    )
 
-    # control distance to abaxial inlet surface
+    # control distance to bottom inlet surface
     inlet_distance = field.add("Distance")
     field.setNumbers(inlet_distance, "FacesList", [tags["bottom_area_tag"]])
     inlet_threshold = field.add("Threshold")
     field.setNumber(inlet_threshold, "InField", inlet_distance)
-    field.setNumber(inlet_threshold, "LcMin", minimum_resolution)
-    field.setNumber(inlet_threshold, "LcMax", maximum_resolution)
-    field.setNumber(inlet_threshold, "DistMin", minimum_distance)
-    field.setNumber(inlet_threshold, "DistMax", maximum_distance)
+    field.setNumber(inlet_threshold, "LcMin", min_stomatal_res)
+    field.setNumber(inlet_threshold, "LcMax", max_global_res)
+    field.setNumber(inlet_threshold, "DistMin", min_stomatal_dist)
+    field.setNumber(inlet_threshold, "DistMax", max_stomatal_dist)
     #
     # control distance to mesophyll cell surfaces
     mesophyll_distance = field.add("Distance")
     field.setNumbers(mesophyll_distance, "FacesList", tags["mesophyll_surface_tags"])
     mesophyll_threshold = field.add("Threshold")
     field.setNumber(mesophyll_threshold, "InField", mesophyll_distance)
-    field.setNumber(
-        mesophyll_threshold, "LcMin", cell_resolution_factor * minimum_resolution
-    )
-    field.setNumber(mesophyll_threshold, "LcMax", maximum_resolution)
-    field.setNumber(mesophyll_threshold, "DistMin", minimum_distance)
-    field.setNumber(mesophyll_threshold, "DistMax", maximum_distance)
+    field.setNumber(mesophyll_threshold, "LcMin", min_cellular_res)
+    field.setNumber(mesophyll_threshold, "LcMax", max_global_res)
+    field.setNumber(mesophyll_threshold, "DistMin", min_cellular_dist)
+    field.setNumber(mesophyll_threshold, "DistMax", max_cellular_dist)
+    #
+    # control distance to plug boundary
+    boundary_distance = field.add("Distance")
+    field.setNumbers(boundary_distance, "FacesList", [tags["curved_area_tag"]])
+    boundary_threshold = field.add("Threshold")
+    field.setNumber(boundary_threshold, "InField", boundary_distance)
+    field.setNumber(boundary_threshold, "LcMin", min_boundary_res)
+    field.setNumber(boundary_threshold, "LcMax", max_global_res)
+    field.setNumber(boundary_threshold, "DistMin", min_boundary_dist)
+    field.setNumber(boundary_threshold, "DistMax", max_boundary_dist)
     #
     minimum_field = field.add("Min")
     field.setNumbers(
-        minimum_field, "FieldsList", [mesophyll_threshold, inlet_threshold]
+        minimum_field,
+        "FieldsList",
+        [mesophyll_threshold, inlet_threshold, boundary_threshold],
     )
     field.setAsBackgroundMesh(minimum_field)
     kernel.synchronize()
@@ -359,10 +389,16 @@ def run_gmsh_session(
     brep_file: str | Path,
     output_mesh_file: str | Path,
     global_resolution_factor: float,
-    cell_resolution_factor: float,
-    minimum_stomatal_aspect: float,
-    minimum_distance_factor: float,
-    maximum_distance_factor: float,
+    min_stomatal_feature: float,
+    min_cellular_feature: float,
+    min_stomatal_dist_factor: float,
+    max_stomatal_dist_factor: float,
+    min_cellular_dist_factor: float,
+    max_cellular_dist_factor: float,
+    min_boundary_dist_factor: float,
+    max_boundary_dist_factor: float,
+    min_points_boundary: int,
+    max_points_boundary: int,
     boundary_margin_fraction: float,
     substomatal_cavity_margin_fraction: float,
     tolerance: float,
@@ -401,10 +437,16 @@ def run_gmsh_session(
         tags,
         plug_aspect,
         global_resolution_factor,
-        cell_resolution_factor,
-        minimum_stomatal_aspect,
-        minimum_distance_factor,
-        maximum_distance_factor,
+        min_stomatal_feature,
+        min_cellular_feature,
+        min_stomatal_dist_factor,
+        max_stomatal_dist_factor,
+        min_cellular_dist_factor,
+        max_cellular_dist_factor,
+        min_boundary_dist_factor,
+        max_boundary_dist_factor,
+        min_points_boundary,
+        max_points_boundary,
     )
 
     gmsh.model.mesh.generate(3)

@@ -47,8 +47,13 @@ class BaseSolver:
         self.facet_tags = mesh_ctx.facet_tags
         # function space and measures
         self.functionspace = fem.functionspace(self.mesh, ("CG", self.order))
-        self.dx = ufl.Measure("dx", domain=self.mesh, subdomain_data=self.cell_tags)
-        self.ds = ufl.Measure("ds", domain=self.mesh, subdomain_data=self.facet_tags)
+        _metadata = {"quadrature_degree": 8}
+        self.dx = ufl.Measure(
+            "dx", domain=self.mesh, subdomain_data=self.cell_tags, metadata=_metadata
+        )
+        self.ds = ufl.Measure(
+            "ds", domain=self.mesh, subdomain_data=self.facet_tags, metadata=_metadata
+        )
         # coefficients
         self.compensation = fem.Constant(self.mesh, default_scalar_type(0.0))
         self.surface_coeff = fem.Constant(self.mesh, default_scalar_type(0.0))
@@ -68,6 +73,12 @@ class BaseSolver:
             )
         )
         self.plug_aspect = np.sqrt(self.plug_area / np.pi)  # radius of cylindrical plug
+        # curved
+        self.curved_area = float(
+            fem.assemble_scalar(
+                fem.form(1.0 * self.ds(self.tags.CURVED))  # type: ignore[reportArgumentType]
+            )
+        )
         # mesophyll
         self.mesophyll_area = float(
             fem.assemble_scalar(
@@ -133,6 +144,14 @@ class BaseSolver:
                 fem.form(ufl.dot(ufl.grad(solution), ufl.FacetNormal(self.mesh)) * self.ds(self.tags.TOP))  # type: ignore[reportArgumentType]
             )
         )
+        # total flux balance
+        total_flux_direct = float(
+            fem.assemble_scalar(
+                fem.form(
+                    ufl.dot(ufl.grad(solution), ufl.FacetNormal(self.mesh)) * self.ds
+                )
+            )
+        )
         # ---------------------------------------------------------------------------
         # CO2 CONCENTRATIONS
 
@@ -165,10 +184,10 @@ class BaseSolver:
         )
 
         # mean square airspace concentration
-        airspace_mean_square_conc = (
+        airspace_variance = (
             float(
                 fem.assemble_scalar(
-                    fem.form(solution**2 * self.dx(self.tags.AIRSPACE))  # type: ignore[reportArgumentType]
+                    fem.form((solution - airspace_mean_conc) ** 2 * self.dx(self.tags.AIRSPACE))  # type: ignore[reportArgumentType]
                 )
             )
             / self.airspace_volume
@@ -187,20 +206,16 @@ class BaseSolver:
         )
 
         # mean square cell surface concentration
-        surface_mean_square_conc = (
+        surface_variance = (
             float(
                 fem.assemble_scalar(
-                    fem.form(solution**2 * self.ds(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
+                    fem.form((solution - surface_mean_conc) ** 2 * self.ds(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
                 )
             )
             / self.mesophyll_area
             if self.mesophyll_area > 0.0
             else 0.0
         )
-
-        # Calculate square-root of variances
-        airspace_variance = airspace_mean_square_conc - airspace_mean_conc**2
-        surface_variance = surface_mean_square_conc - surface_mean_conc**2
 
         return {
             "stomatal_flux_direct": stomatal_flux_direct,
@@ -209,6 +224,7 @@ class BaseSolver:
             "mesophyll_flux_equiv": mesophyll_flux_equiv,
             "curved_flux_direct": curved_flux_direct,
             "top_flux_direct": top_flux_direct,
+            "total_flux_direct": total_flux_direct,
             "substomatal_mean": substomatal_conc,
             "top_mean": top_concentration,
             "airspace_mean": airspace_mean_conc,
@@ -216,6 +232,7 @@ class BaseSolver:
             "surface_mean": surface_mean_conc,
             "surface_variance": surface_variance,
             "plug_area": self.plug_area,
+            "curved_area": self.curved_area,
             "stomatal_area": self.stomatal_area,
             "mesophyll_area": self.mesophyll_area,
             "stomatal_area_fraction": self.stomatal_area_fraction,

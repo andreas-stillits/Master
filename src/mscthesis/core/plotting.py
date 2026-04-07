@@ -46,8 +46,8 @@ def make_flux_plots(
     # plot 1: flux at stomatal and mesophyll boundary
     diff_stomatal = calc(an_stomatal_direct, an_stomatal_equiv)
     diff_mesophyll = calc(an_mesophyll_direct, an_mesophyll_equiv)
-    diff_total = calc(an_stomatal_direct, an_mesophyll_direct + an_curved + an_top)
-    diff_active = calc(an_stomatal_direct, an_mesophyll_direct)
+    diff_total = calc(an_stomatal_equiv, an_mesophyll_equiv + an_curved + an_top)
+    diff_active = calc(an_stomatal_equiv, an_mesophyll_equiv)
 
     make_lineplot(
         axes,
@@ -63,13 +63,13 @@ def make_flux_plots(
         label="Mesophyll flux adherence",
         color="#1f77b4",
     )
-    make_lineplot(
-        axes,
-        resolution_factors,
-        diff_total,
-        label="Total flux conservation",
-        color="#2ca02c",
-    )
+    # make_lineplot(
+    #     axes,
+    #     resolution_factors,
+    #     diff_total,
+    #     label="Total flux conservation",
+    #     color="#2ca02c",
+    # )
     make_lineplot(
         axes,
         resolution_factors,
@@ -176,20 +176,35 @@ def plot_validation_results(
 
     fig, axes = plt.subplots(1, 1, figsize=(12, 6))
     axes.plot(
-        transform("resolution_factor"), transform("curved_flux_direct"), marker="x"
+        transform("resolution_factor"),
+        transform("curved_flux_direct"),
+        marker="x",
+        label="Curved flux",
     )
-    axes.plot(transform("resolution_factor"), transform("top_flux_direct"), marker="x")
     axes.plot(
-        transform("resolution_factor"), transform("stomatal_flux_direct"), marker="x"
+        transform("resolution_factor"),
+        transform("top_flux_direct"),
+        marker="x",
+        label="Top flux",
     )
     axes.plot(
-        transform("resolution_factor"), transform("mesophyll_flux_direct"), marker="x"
+        transform("resolution_factor"),
+        transform("stomatal_flux_equiv"),
+        marker="x",
+        label="Stomatal flux",
+    )
+    axes.plot(
+        transform("resolution_factor"),
+        transform("mesophyll_flux_equiv"),
+        marker="x",
+        label="Mesophyll flux",
     )
     axes.set_xscale("log")
     axes.set_xlabel("Resolution factor")
     axes.set_ylabel("Number of cells")
     axes.set_title("Mesh complexity")
     axes.grid(linestyle="-.", alpha=0.5)
+    axes.legend()
     plt.tight_layout()
     plt.show()
 
