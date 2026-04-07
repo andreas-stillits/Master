@@ -45,6 +45,8 @@
     "no_meshing": false,
     "no_solving": false,
     "workers": 16,
+    "resolution_factor_max": 4.0,
+    "resolution_factor_num": 6,
     "problem_type": "uniform",
     "parameters_uniform": [
       1.0,

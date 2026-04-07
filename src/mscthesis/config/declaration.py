@@ -181,6 +181,8 @@ class ValidationConfig(BaseModel):
     no_meshing: bool = False
     no_solving: bool = False
     workers: int = 16
+    resolution_factor_max: float = 4.0
+    resolution_factor_num: int = 6
     problem_type: Literal["uniform", "diffusion"] = "uniform"
     parameters_uniform: tuple[float, ...] = (
         1.0,
@@ -197,6 +199,8 @@ class ValidationConfig(BaseModel):
         "no_meshing": "Flag to store as true and skip meshing step if meshes already exist",
         "no_solving": "Flag to store as true and skip solving step if solutions already exist",
         "workers": "Max number of worker processes for parallel execution of meshing and solving",
+        "resolution_factor_max": "Maximum factor for determining mesh resolution",
+        "resolution_factor_num": "Number of resolution factors to test (logspaced between 1.0 and max)",
         "problem_type": "Type of problem to solve for validation, choose from: uniform, diffusion",
         "parameters_uniform": "Tuple of parameters for uniform problem (absorption, transport, compensation)",
         "parameters_diffusion": "Tuple of parameters for diffusion problem (top_conc, transport)",
