@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 
 from pydantic import BaseModel
 from pydantic.config import ConfigDict
@@ -170,6 +170,43 @@ class MeshingConfig(BaseModel):
     }
 
 
+class ValidationConfig(BaseModel):
+    """Configuration for validation related settings"""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"expose": True, "commands": ["validate"]},
+    )
+
+    no_meshing: bool = False
+    no_solving: bool = False
+    workers: int = 16
+    problem_type: Literal["uniform", "diffusion"] = "uniform"
+    parameters_uniform: tuple[float, ...] = (
+        1.0,
+        1.0,
+        0.1,
+    )  # absorption, transport, compensation
+    parameters_diffusion: tuple[float, ...] = (0.1, 1.0)  # top_conc, transport
+    stomatal_aspect: float = 0.02
+    stomatal_epsilon: float = 0.002
+    ksp_rtol: float = 1e-8
+    quad_degree: int = 4
+
+    cli_hints: ClassVar[dict[str, str]] = {
+        "no_meshing": "Flag to store as true and skip meshing step if meshes already exist",
+        "no_solving": "Flag to store as true and skip solving step if solutions already exist",
+        "workers": "Max number of worker processes for parallel execution of meshing and solving",
+        "problem_type": "Type of problem to solve for validation, choose from: uniform, diffusion",
+        "parameters_uniform": "Tuple of parameters for uniform problem (absorption, transport, compensation)",
+        "parameters_diffusion": "Tuple of parameters for diffusion problem (top_conc, transport)",
+        "stomatal_aspect": "Aspect ratio of the stomatal pore for validation problems",
+        "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function in validation problems",
+        "ksp_rtol": "Relative tolerance for the KSP solver in validation problems",
+        "quad_degree": "Quadrature degree for finite element integration in validation problems",
+    }
+
+
 class UniformSolutionConfig(BaseModel):
     """Configuration for solver related settings"""
 
@@ -264,6 +301,7 @@ class ProjectConfig(BaseModel):
     synthesize_uniform: UniformSynthesisConfig = UniformSynthesisConfig()
     triangulate: TriangulationConfig = TriangulationConfig()
     mesh: MeshingConfig = MeshingConfig()
+    validation: ValidationConfig = ValidationConfig()
     solve_uniform: UniformSolutionConfig = UniformSolutionConfig()
     scan: ScanningConfig = ScanningConfig()
     diffuse: DiffusionConfig = DiffusionConfig()
