@@ -49,6 +49,7 @@ def _cmd(args: argparse.Namespace) -> None:
         cmdconfig.stomatal_aspect,
         cmdconfig.stomatal_epsilon,
         cmdconfig.ksp_rtol,
+        cmdconfig.quad_degree,
         cmdconfig.order,
     )
 

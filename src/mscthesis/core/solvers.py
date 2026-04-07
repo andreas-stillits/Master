@@ -31,6 +31,7 @@ class SolverConfig:
     stomatal_aspect: float
     stomatal_epsilon: float
     ksp_rtol: float
+    quad_degree: int
     order: int
 
 
@@ -40,6 +41,7 @@ class BaseSolver:
         self.stomatal_aspect = solver_config.stomatal_aspect
         self.stomatal_epsilon = solver_config.stomatal_epsilon
         self.ksp_rtol = solver_config.ksp_rtol
+        self.quad_degree = solver_config.quad_degree
         self.order = solver_config.order
         # mesh
         self.mesh = mesh_ctx.mesh
@@ -47,12 +49,18 @@ class BaseSolver:
         self.facet_tags = mesh_ctx.facet_tags
         # function space and measures
         self.functionspace = fem.functionspace(self.mesh, ("CG", self.order))
-        _metadata = {"quadrature_degree": 8}
+
         self.dx = ufl.Measure(
-            "dx", domain=self.mesh, subdomain_data=self.cell_tags, metadata=_metadata
+            "dx",
+            domain=self.mesh,
+            subdomain_data=self.cell_tags,
+            metadata={"quadrature_degree": self.quad_degree},
         )
         self.ds = ufl.Measure(
-            "ds", domain=self.mesh, subdomain_data=self.facet_tags, metadata=_metadata
+            "ds",
+            domain=self.mesh,
+            subdomain_data=self.facet_tags,
+            metadata={"quadrature_degree": self.quad_degree},
         )
         # coefficients
         self.compensation = fem.Constant(self.mesh, default_scalar_type(0.0))
@@ -100,14 +108,14 @@ class BaseSolver:
         self.stomatal_area_fraction = self.stomatal_area / self.plug_area
         return
 
-    def analyze(self, solution: fem.Function) -> dict[str, Any]:
+    def analyze(self, solution: fem.Function, gradient: fem.Function) -> dict[str, Any]:
         # FLUXES
+        normal = ufl.FacetNormal(self.mesh)
         # stomatal
         stomatal_flux_direct = float(
             fem.assemble_scalar(
                 fem.form(
-                    ufl.dot(ufl.grad(solution), ufl.FacetNormal(self.mesh))
-                    * self.ds(self.tags.BOTTOM)
+                    ufl.dot(gradient, normal) * self.ds(self.tags.BOTTOM)
                 )  # type: ignore[reportArgumentType]
             )
         )
@@ -124,7 +132,7 @@ class BaseSolver:
         # mesophyll
         mesophyll_flux_direct = float(
             fem.assemble_scalar(
-                fem.form(ufl.dot(ufl.grad(solution), ufl.FacetNormal(self.mesh)) * self.ds(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
+                fem.form(ufl.dot(gradient, normal) * self.ds(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
             )
         )
         mesophyll_flux_equiv = float(
@@ -135,22 +143,18 @@ class BaseSolver:
         # curved surface flux
         curved_flux_direct = float(
             fem.assemble_scalar(
-                fem.form(ufl.dot(ufl.grad(solution), ufl.FacetNormal(self.mesh)) * self.ds(self.tags.CURVED))  # type: ignore[reportArgumentType]
+                fem.form(ufl.dot(gradient, normal) * self.ds(self.tags.CURVED))  # type: ignore[reportArgumentType]
             )
         )
         # top surface flux
         top_flux_direct = float(
             fem.assemble_scalar(
-                fem.form(ufl.dot(ufl.grad(solution), ufl.FacetNormal(self.mesh)) * self.ds(self.tags.TOP))  # type: ignore[reportArgumentType]
+                fem.form(ufl.dot(gradient, normal) * self.ds(self.tags.TOP))  # type: ignore[reportArgumentType]
             )
         )
         # total flux balance
         total_flux_direct = float(
-            fem.assemble_scalar(
-                fem.form(
-                    ufl.dot(ufl.grad(solution), ufl.FacetNormal(self.mesh)) * self.ds
-                )
-            )
+            fem.assemble_scalar(fem.form(ufl.dot(gradient, normal) * self.ds))
         )
         # ---------------------------------------------------------------------------
         # CO2 CONCENTRATIONS
@@ -247,6 +251,30 @@ class BaseSolver:
     ) -> tuple[fem.Function, dict[str, Any]]:
         raise NotImplementedError("Must be implemented by subclass.")
 
+    def compute_gradient(
+        self,
+        solution: fem.Function,
+    ) -> fem.Function:
+        grad_order = max(self.order - 1, 0)  # Ensure order is at least 1
+        gradientspace = fem.functionspace(
+            self.mesh, ("DG", grad_order, (self.mesh.geometry.dim,))
+        )
+        d_chi = ufl.TrialFunction(gradientspace)
+        v = ufl.TestFunction(gradientspace)
+        a_proj = ufl.inner(d_chi, v) * self.dx
+        L_proj = ufl.inner(ufl.grad(solution), v) * self.dx
+        projection_problem = LinearProblem(
+            a_proj,
+            L_proj,
+            bcs=[],
+            petsc_options={
+                "ksp_type": "cg",
+                "ksp_rtol": self.ksp_rtol,
+                "pc_type": "jacobi",
+            },
+        )
+        return projection_problem.solve()
+
 
 # ------------------------------------------------------------------------
 # UNIFORM SOLVER
@@ -283,8 +311,7 @@ class UniformSolver(BaseSolver):
             petsc_options={
                 "ksp_type": "cg",
                 "ksp_rtol": self.ksp_rtol,
-                "pc_type": "hypre",
-                "pc_hypre_type": "boomeramg",
+                "pc_type": "jacobi",
             },
         )
 
@@ -299,7 +326,8 @@ class UniformSolver(BaseSolver):
         )
         self.compensation.value = default_scalar_type(compensation)
         solution = self.problem.solve()
-        return solution, self.analyze(solution)
+        gradient = self.compute_gradient(solution)
+        return solution, self.analyze(solution, gradient)
 
 
 # ------------------------------------------------------------------------
@@ -360,4 +388,5 @@ class DiffusionSolver(BaseSolver):
             transport / self.stomatal_area_fraction
         )
         solution = self.problem.solve()
-        return solution, self.analyze(solution)
+        gradient = self.compute_gradient(solution)
+        return solution, self.analyze(solution, gradient)

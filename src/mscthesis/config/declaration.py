@@ -146,8 +146,8 @@ class MeshingConfig(BaseModel):
     max_cellular_dist_factor: float = 8.0
     min_boundary_dist_factor: float = 2.0
     max_boundary_dist_factor: float = 4.0
-    min_points_boundary: int = 24
-    max_points_boundary: int = 48
+    min_points_boundary: int = 16
+    max_points_boundary: int = 32
     boundary_margin_fraction: float = 0.05
     substomatal_cavity_margin_fraction: float = 0.05
     tolerance: float = 0.01
@@ -184,6 +184,7 @@ class UniformSolutionConfig(BaseModel):
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
     ksp_rtol: float = 1e-8
+    quad_degree: int = 4
     order: int = 1
     no_save: bool = False
 
@@ -194,6 +195,7 @@ class UniformSolutionConfig(BaseModel):
         "stomatal_aspect": "Aspect ratio of the stomatal pore",
         "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function",
         "ksp_rtol": "Relative tolerance for the KSP solver",
+        "quad_degree": "Quadrature degree for finite element integration",
         "order": "Order of the finite element method",
         "no_save": "Whether to save the solution to a file (put flag for true to skip saving)",
     }
@@ -217,6 +219,7 @@ class ScanningConfig(BaseModel):
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
     ksp_rtol: float = 1e-8
+    quad_degree: int = 4
     order: int = 1
     max_workers: int = 16
 
@@ -231,6 +234,7 @@ class ScanningConfig(BaseModel):
         "stomatal_aspect": "Aspect ratio of the stomatal pore",
         "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function",
         "ksp_rtol": "Relative tolerance for the KSP solver",
+        "quad_degree": "Quadrature degree for finite element integration",
         "order": "Order of the finite element method",
         "max_workers": "Maximum number of worker processes for parallel execution",
     }

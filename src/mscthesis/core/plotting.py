@@ -151,6 +151,7 @@ def plot_validation_results(
     df: pd.DataFrame, base_path: Path, show: bool = False
 ) -> None:
     flux_path = base_path / "flux_conservation.png"
+
     transform = lambda s: np.abs(df[s].to_numpy())
     make_flux_plots(
         flux_path,
