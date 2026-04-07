@@ -94,7 +94,10 @@ class BaseSolver:
         # stomatal
         stomatal_flux_direct = float(
             fem.assemble_scalar(
-                fem.form(ufl.dot(ufl.grad(solution), ufl.FacetNormal(self.mesh)) * self.ds(self.tags.BOTTOM))  # type: ignore[reportArgumentType]
+                fem.form(
+                    ufl.dot(ufl.grad(solution), ufl.FacetNormal(self.mesh))
+                    * self.ds(self.tags.BOTTOM)
+                )  # type: ignore[reportArgumentType]
             )
         )
         stomatal_flux_equiv = float(

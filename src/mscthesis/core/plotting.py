@@ -40,28 +40,15 @@ def make_flux_plots(
     Assumes positive entries only.
     """
     fig, axes = plt.subplots(1, 1, figsize=(12, 6))
+
+    calc = lambda x, y: np.abs((x - y) / x) if np.all(x > 0) else np.zeros_like(x)
+
     # plot 1: flux at stomatal and mesophyll boundary
-    diff_stomatal = (
-        (an_stomatal_direct - an_stomatal_equiv) / an_stomatal_direct
-        if np.all(an_stomatal_direct > 0)
-        else np.zeros_like(an_stomatal_direct)
-    )
-    diff_mesophyll = (
-        (an_mesophyll_direct - an_mesophyll_equiv) / an_mesophyll_direct
-        if np.all(an_mesophyll_direct > 0)
-        else np.zeros_like(an_mesophyll_direct)
-    )
-    diff_total = (
-        (an_stomatal_direct - an_mesophyll_direct - an_curved - an_top)
-        / an_stomatal_direct
-        if np.all(an_stomatal_direct > 0)
-        else np.zeros_like(an_stomatal_direct)
-    )
-    diff_active = (
-        (an_stomatal_direct - an_mesophyll_direct) / an_stomatal_direct
-        if np.all(an_stomatal_direct > 0)
-        else np.zeros_like(an_stomatal_direct)
-    )
+    diff_stomatal = calc(an_stomatal_direct, an_stomatal_equiv)
+    diff_mesophyll = calc(an_mesophyll_direct, an_mesophyll_equiv)
+    diff_total = calc(an_stomatal_direct, an_mesophyll_direct + an_curved + an_top)
+    diff_active = calc(an_stomatal_direct, an_mesophyll_direct)
+
     make_lineplot(
         axes,
         resolution_factors,
@@ -106,7 +93,56 @@ def make_flux_plots(
     return
 
 
-def make_concentration_plots() -> None:
+def make_concentration_plots(
+    plot_path: str | Path,
+    resolution_factors: np.ndarray,
+    conc_i: np.ndarray,
+    conc_t: np.ndarray,
+    conc_a: np.ndarray,
+    conc_m: np.ndarray,
+    show: bool = False,
+) -> None:
+    fig, axes = plt.subplots(1, 1, figsize=(12, 6))
+    make_lineplot(
+        axes,
+        resolution_factors,
+        conc_i,
+        label="Substomatal concentration",
+        color="#D70606",
+    )
+    make_lineplot(
+        axes,
+        resolution_factors,
+        conc_t,
+        label="Top concentration",
+        color="#1f77b4",
+    )
+    make_lineplot(
+        axes,
+        resolution_factors,
+        conc_a,
+        label="Airspace concentration",
+        color="#2ca02c",
+    )
+    make_lineplot(
+        axes,
+        resolution_factors,
+        conc_m,
+        label="Mesophyll concentration",
+        color="#ff7f0e",
+    )
+    axes.plot(0, 0, "w.")
+    axes.set_xscale("log")
+    axes.set_xlabel("Resolution factor")
+    axes.set_ylabel("Concentration []")
+    axes.set_title("Concentration at key locations")
+    axes.legend()
+    axes.grid(linestyle="-.", alpha=0.5)
+    plt.tight_layout()
+    fig.savefig(plot_path, dpi=300)
+
+    if show:
+        plt.show()
 
     return
 
@@ -115,16 +151,46 @@ def plot_validation_results(
     df: pd.DataFrame, base_path: Path, show: bool = False
 ) -> None:
     flux_path = base_path / "flux_conservation.png"
+    transform = lambda s: np.abs(df[s].to_numpy())
     make_flux_plots(
         flux_path,
-        np.abs(df["resolution_factor"].to_numpy()),
-        np.abs(df["stomatal_flux_direct"].to_numpy()),
-        np.abs(df["stomatal_flux_equiv"].to_numpy()),
-        np.abs(df["mesophyll_flux_direct"].to_numpy()),
-        np.abs(df["mesophyll_flux_equiv"].to_numpy()),
-        np.abs(df["curved_flux_direct"].to_numpy()),
-        np.abs(df["top_flux_direct"].to_numpy()),
+        transform("resolution_factor"),
+        transform("stomatal_flux_direct"),
+        transform("stomatal_flux_equiv"),
+        transform("mesophyll_flux_direct"),
+        transform("mesophyll_flux_equiv"),
+        transform("curved_flux_direct"),
+        transform("top_flux_direct"),
         show=show,
     )
+    conc_path = base_path / "concentrations.png"
+    make_concentration_plots(
+        conc_path,
+        transform("resolution_factor"),
+        transform("substomatal_mean"),
+        transform("top_mean"),
+        transform("airspace_mean"),
+        transform("surface_mean"),
+        show=show,
+    )
+
+    fig, axes = plt.subplots(1, 1, figsize=(12, 6))
+    axes.plot(
+        transform("resolution_factor"), transform("curved_flux_direct"), marker="x"
+    )
+    axes.plot(transform("resolution_factor"), transform("top_flux_direct"), marker="x")
+    axes.plot(
+        transform("resolution_factor"), transform("stomatal_flux_direct"), marker="x"
+    )
+    axes.plot(
+        transform("resolution_factor"), transform("mesophyll_flux_direct"), marker="x"
+    )
+    axes.set_xscale("log")
+    axes.set_xlabel("Resolution factor")
+    axes.set_ylabel("Number of cells")
+    axes.set_title("Mesh complexity")
+    axes.grid(linestyle="-.", alpha=0.5)
+    plt.tight_layout()
+    plt.show()
 
     return

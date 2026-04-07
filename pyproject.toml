@@ -43,7 +43,8 @@ select = [
 ]
 
 ignore = [
-    "E501"  # line length handled by black
+    "E501", # line length handled by black
+    "E731"  # discriminate lambda functions
 ]
 
 [tool.ruff.lint.isort]
