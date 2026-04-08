@@ -45,13 +45,14 @@
     "tag": "validation.name",
     "no_meshing": false,
     "no_solving": false,
+    "no_show": false,
     "workers": 16,
     "resolution_factor_max": 4.0,
-    "resolution_factor_num": 8,
+    "resolution_factor_num": 10,
     "problem_type": "uniform",
     "parameters_uniform": [
       1.0,
-      1.0,
+      5.0,
       0.1
     ],
     "parameters_diffusion": [

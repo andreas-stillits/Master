@@ -272,6 +272,14 @@ class ValidationPaths:
     def results(self) -> Path:
         return self.dir / "results.csv"
 
+    @property
+    def config(self) -> Path:
+        return self.dir / "config.json"
+
+    @property
+    def manifest(self) -> Path:
+        return self.dir / "manifest.json"
+
     def require_dir(self) -> Path:
         return require_dir(self.dir)
 
@@ -279,17 +287,59 @@ class ValidationPaths:
         self.paths.require_base()
         return ensure_dir(self.dir)
 
-    def ensure_mesh_dir(self) -> Path:
+    def verify_tag(self) -> None:
+        # nonempty
+        if not self.tag:
+            raise ValueError("Validation tag cannot be empty")
+        # no special characters that are not allowed in file paths
+        if any(c in self.tag for c in r'\/:*?"<>|'):
+            raise ValueError(
+                'Validation tag cannot contain any of the following characters: \\ / : * ? " < > |'
+            )
+        # no leading or trailing whitespace
+        if self.tag != self.tag.strip():
+            raise ValueError(
+                "Validation tag cannot have leading or trailing whitespace"
+            )
+        # no leading or trailing dots
+        if self.tag != self.tag.strip("."):
+            raise ValueError("Validation tag cannot have leading or trailing dots")
+        return
+
+    def ensure_reference_dir(self) -> Path:
+        self.ensure_dir()
+        return ensure_dir(self.dir / "reference")
+
+    def ensure_meshes_dir(self) -> Path:
         self.ensure_dir()
         return ensure_dir(self.dir / "meshes")
 
     def ensure_solutions_dir(self) -> Path:
         self.ensure_dir()
-        return ensure_dir(self.dir / "solutions")
+        solutions_dir = ensure_dir(self.dir / "solutions")
+        ensure_dir(solutions_dir / "CG1")
+        ensure_dir(solutions_dir / "CG2")
+        return solutions_dir
 
     def ensure_plots_dir(self) -> Path:
         self.ensure_dir()
         return ensure_dir(self.dir / "plots")
+
+    def ensure_all(self) -> Path:
+        self.ensure_dir()
+        self.ensure_reference_dir()
+        self.ensure_meshes_dir()
+        self.ensure_solutions_dir()
+        self.ensure_plots_dir()
+        return self.dir
+
+    def get_solution_path(self, order: int) -> Path:
+        if order == 1:
+            return self.ensure_solutions_dir() / "CG1" / "solution.bp"
+        elif order == 2:
+            return self.ensure_solutions_dir() / "CG2" / "solution.bp"
+        else:
+            raise ValueError(f"Unsupported order: {order}")
 
 
 @dataclass(frozen=True)

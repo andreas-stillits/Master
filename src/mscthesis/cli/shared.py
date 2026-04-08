@@ -12,6 +12,7 @@ from ..utilities.manifest import dump_manifest
 from ..utilities.paths import (
     ProcessPathsBase,
     ProjectPaths,
+    ValidationPaths,
 )
 
 
@@ -182,7 +183,7 @@ def setup_command(args: argparse.Namespace) -> tuple[ProjectPaths, ProjectConfig
 
 
 def document_command_execution(
-    process_paths: ProcessPathsBase,
+    process_paths: ProcessPathsBase | ValidationPaths,
     config: ProjectConfig,
     command_name: str,
     sample_id: str,

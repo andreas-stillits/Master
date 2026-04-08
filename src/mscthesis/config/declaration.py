@@ -175,12 +175,13 @@ class ValidationConfig(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra={"expose": True, "commands": ["validate"]},
+        json_schema_extra={"expose": True, "commands": ["validation"]},
     )
 
     tag: str = "validation.name"
     no_meshing: bool = False
     no_solving: bool = False
+    no_show: bool = False
     workers: int = 16
     resolution_factor_max: float = 4.0
     resolution_factor_num: int = 8
@@ -200,6 +201,7 @@ class ValidationConfig(BaseModel):
         "tag": "Tag to identify the validation run, used for naming output directory",
         "no_meshing": "Flag to store as true and skip meshing step if meshes already exist",
         "no_solving": "Flag to store as true and skip solving step if solutions already exist",
+        "show_plots": "Flag to display plots after validation",
         "workers": "Max number of worker processes for parallel execution of meshing and solving",
         "resolution_factor_max": "Maximum factor for determining mesh resolution",
         "resolution_factor_num": "Number of resolution factors to test (logspaced between 1.0 and max)",
