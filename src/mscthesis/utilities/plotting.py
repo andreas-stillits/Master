@@ -14,6 +14,8 @@ _DEFAULT_RCPARAMS = {
     "figure.dpi": 120,
     "savefig.dpi": 300,
     "savefig.bbox": "tight",
+    "mathtext.fontset": "stix",
+    "font.family": "STIXGeneral",
     "font.size": 9,
     "axes.labelsize": 9,
     "axes.titlesize": 10,
@@ -29,7 +31,7 @@ _DEFAULT_RCPARAMS = {
     "ytick.major.size": 3,
     "xtick.major.width": 0.8,
     "ytick.major.width": 0.8,
-    "lines.linewidth": 1.5,
+    "lines.linewidth": 1.0,
     "lines.markersize": 4,
     "legend.frameon": False,
     "axes.prop_cycle": mpl.cycler(color=CYCLE),
@@ -117,6 +119,11 @@ def set_axis_labels(
         ax.set_ylabel(ylabel)
     if title is not None:
         ax.set_title(title)
+    return
+
+
+def gridlines(ax: plt.Axes, **kwargs: Any) -> None:
+    ax.grid(linestyle="-.", color="gray", alpha=0.5, **kwargs)
     return
 
 
