@@ -178,11 +178,12 @@ class ValidationConfig(BaseModel):
         json_schema_extra={"expose": True, "commands": ["validate"]},
     )
 
+    tag: str = "validation.name"
     no_meshing: bool = False
     no_solving: bool = False
     workers: int = 16
     resolution_factor_max: float = 4.0
-    resolution_factor_num: int = 6
+    resolution_factor_num: int = 8
     problem_type: Literal["uniform", "diffusion"] = "uniform"
     parameters_uniform: tuple[float, ...] = (
         1.0,
@@ -196,6 +197,7 @@ class ValidationConfig(BaseModel):
     quad_degree: int = 4
 
     cli_hints: ClassVar[dict[str, str]] = {
+        "tag": "Tag to identify the validation run, used for naming output directory",
         "no_meshing": "Flag to store as true and skip meshing step if meshes already exist",
         "no_solving": "Flag to store as true and skip solving step if solutions already exist",
         "workers": "Max number of worker processes for parallel execution of meshing and solving",
