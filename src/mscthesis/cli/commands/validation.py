@@ -85,7 +85,9 @@ def _cmd(args: argparse.Namespace) -> None:
             config.mesh.tolerance,
         )
 
-        _ = distribute(meshing, batches, cmdconfig.workers, brep_path, *meshing_args)
+        _ = distribute(
+            meshing, batches, cmdconfig.max_workers, brep_path, *meshing_args
+        )
         dump_resolved_command_config(
             config, "mesh", validation_paths.ensure_meshes_dir() / "config.json"
         )
@@ -119,7 +121,7 @@ def _cmd(args: argparse.Namespace) -> None:
         qoi_metrics = distribute(
             solving,
             batches,
-            cmdconfig.workers,
+            cmdconfig.max_workers,
             SolverClass,
             solver_config,
             validation_paths,

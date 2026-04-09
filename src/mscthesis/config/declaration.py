@@ -137,17 +137,17 @@ class MeshingConfig(BaseModel):
         json_schema_extra={"expose": True, "commands": ["mesh"]},
     )
 
-    global_resolution_factor: float = 1.0
-    min_stomatal_feature: float = 0.005
-    min_cellular_feature: float = 0.005
+    global_resolution_factor: float = 2.0
+    min_stomatal_feature: float = 0.008
+    min_cellular_feature: float = 0.008
     min_stomatal_dist_factor: float = 4.0
     max_stomatal_dist_factor: float = 8.0
     min_cellular_dist_factor: float = 4.0
     max_cellular_dist_factor: float = 8.0
     min_boundary_dist_factor: float = 2.0
     max_boundary_dist_factor: float = 4.0
-    min_points_boundary: int = 16
-    max_points_boundary: int = 32
+    min_points_boundary: int = 30
+    max_points_boundary: int = 40
     boundary_margin_fraction: float = 0.05
     substomatal_cavity_margin_fraction: float = 0.05
     tolerance: float = 0.01
@@ -178,13 +178,13 @@ class ValidationConfig(BaseModel):
         json_schema_extra={"expose": True, "commands": ["validation"]},
     )
 
-    tag: str = "validation.name"
+    tag: str = "newtest"
     no_meshing: bool = False
     no_solving: bool = False
     no_show: bool = False
-    workers: int = 16
+    max_workers: int = 16
     resolution_factor_max: float = 4.0
-    resolution_factor_num: int = 8
+    resolution_factor_num: int = 16
     problem_type: Literal["uniform", "diffusion"] = "uniform"
     parameters_uniform: tuple[float, ...] = (
         1.0,
@@ -201,8 +201,8 @@ class ValidationConfig(BaseModel):
         "tag": "Tag to identify the validation run, used for naming output directory",
         "no_meshing": "Flag to store as true and skip meshing step if meshes already exist",
         "no_solving": "Flag to store as true and skip solving step if solutions already exist",
-        "show_plots": "Flag to display plots after validation",
-        "workers": "Max number of worker processes for parallel execution of meshing and solving",
+        "no_show": "Flag to store as true and skip displaying plots after validation",
+        "max_workers": "Max number of worker processes for parallel execution of meshing and solving",
         "resolution_factor_max": "Maximum factor for determining mesh resolution",
         "resolution_factor_num": "Number of resolution factors to test (logspaced between 1.0 and max)",
         "problem_type": "Type of problem to solve for validation, choose from: uniform, diffusion",
@@ -230,7 +230,7 @@ class UniformSolutionConfig(BaseModel):
     stomatal_epsilon: float = 0.002
     ksp_rtol: float = 1e-8
     quad_degree: int = 4
-    order: int = 1
+    order: int = 2
     no_save: bool = False
 
     cli_hints: ClassVar[dict[str, str]] = {
@@ -265,7 +265,7 @@ class ScanningConfig(BaseModel):
     stomatal_epsilon: float = 0.002
     ksp_rtol: float = 1e-8
     quad_degree: int = 4
-    order: int = 1
+    order: int = 2
     max_workers: int = 16
 
     cli_hints: ClassVar[dict[str, str]] = {
