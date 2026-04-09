@@ -127,7 +127,7 @@ def _cmd(args: argparse.Namespace) -> None:
         )
 
         dataframe = pd.DataFrame(qoi_metrics)
-        dataframe.sort_values(["order", "resolution_factor"]).reset_index(
+        dataframe.sort_values(["resolution_factor", "order"]).reset_index(
             drop=True, inplace=True
         )
         save_dataframe(dataframe, validation_paths.results)

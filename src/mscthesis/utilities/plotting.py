@@ -31,7 +31,7 @@ _DEFAULT_RCPARAMS = {
     "ytick.major.size": 3,
     "xtick.major.width": 0.8,
     "ytick.major.width": 0.8,
-    "lines.linewidth": 1.0,
+    "lines.linewidth": 1.5,
     "lines.markersize": 4,
     "legend.frameon": False,
     "axes.prop_cycle": mpl.cycler(color=CYCLE),

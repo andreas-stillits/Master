@@ -26,32 +26,32 @@
     "freecad_script_path": "/home/andreasstillits/coding/master/src/mscthesis/core/meshing/breping.py"
   },
   "mesh": {
-    "global_resolution_factor": 1.0,
-    "min_stomatal_feature": 0.005,
-    "min_cellular_feature": 0.005,
+    "global_resolution_factor": 2.0,
+    "min_stomatal_feature": 0.008,
+    "min_cellular_feature": 0.008,
     "min_stomatal_dist_factor": 4.0,
     "max_stomatal_dist_factor": 8.0,
     "min_cellular_dist_factor": 4.0,
     "max_cellular_dist_factor": 8.0,
     "min_boundary_dist_factor": 2.0,
     "max_boundary_dist_factor": 4.0,
-    "min_points_boundary": 16,
-    "max_points_boundary": 32,
+    "min_points_boundary": 30,
+    "max_points_boundary": 40,
     "boundary_margin_fraction": 0.05,
     "substomatal_cavity_margin_fraction": 0.05,
     "tolerance": 0.01
   },
   "validation": {
-    "tag": "validation.name",
-    "no_meshing": true,
-    "no_solving": true,
-    "no_show": true,
+    "tag": "newtest",
+    "no_meshing": false,
+    "no_solving": false,
+    "no_show": false,
     "workers": 16,
     "resolution_factor_max": 4.0,
-    "resolution_factor_num": 10,
+    "resolution_factor_num": 16,
     "problem_type": "uniform",
     "parameters_uniform": [
-      1.0,
+      5.0,
       5.0,
       0.1
     ],
@@ -65,14 +65,14 @@
     "quad_degree": 4
   },
   "solve_uniform": {
-    "absorption": 1.0,
-    "transport": 1.0,
+    "absorption": 5.0,
+    "transport": 5.0,
     "compensation": 0.1,
     "stomatal_aspect": 0.02,
     "stomatal_epsilon": 0.002,
     "ksp_rtol": 1e-08,
     "quad_degree": 4,
-    "order": 1,
+    "order": 2,
     "no_save": false
   },
   "scan": {
@@ -87,7 +87,7 @@
     "stomatal_epsilon": 0.002,
     "ksp_rtol": 1e-08,
     "quad_degree": 4,
-    "order": 1,
+    "order": 2,
     "max_workers": 16
   },
   "diffuse": {
