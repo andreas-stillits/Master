@@ -154,7 +154,7 @@ class BaseSolver:
         )
         # total flux balance
         total_flux_direct = float(
-            fem.assemble_scalar(fem.form(ufl.dot(gradient, normal) * self.ds))
+            fem.assemble_scalar(fem.form(ufl.dot(gradient, normal) * self.ds))  # type: ignore[reportArgumentType]
         )
         # ---------------------------------------------------------------------------
         # CO2 CONCENTRATIONS
