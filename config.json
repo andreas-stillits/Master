@@ -43,16 +43,16 @@
   },
   "validation": {
     "tag": "newtest",
-    "no_meshing": false,
+    "no_meshing": true,
     "no_solving": false,
-    "no_show": false,
+    "no_show": true,
     "workers": 16,
     "resolution_factor_max": 4.0,
     "resolution_factor_num": 16,
     "problem_type": "uniform",
     "parameters_uniform": [
-      5.0,
-      5.0,
+      1.0,
+      1.0,
       0.1
     ],
     "parameters_diffusion": [

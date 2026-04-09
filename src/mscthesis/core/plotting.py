@@ -216,7 +216,7 @@ def create_convergence_figure(
         ylabel="Relative error",
         title="Convergence to target CG2 solution",
         ylog=True,
-        ymin=1e-5,
+        ymin=1e-4,
     )
 
     return
@@ -234,7 +234,7 @@ def create_solution_figure(
 def plot_validation_results(
     df: pd.DataFrame,
     output_dir: Path,
-    tolerance: float = 0.01,
+    tolerance: float = 1e-2,
     ignore_threshold: float = 1e-1,
     show: bool = False,
 ) -> None:
