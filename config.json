@@ -61,7 +61,9 @@
     ],
     "stomatal_aspect": 0.02,
     "stomatal_epsilon": 0.002,
+    "ksp_type": "cg",
     "ksp_rtol": 1e-08,
+    "pc_type": "jacobi",
     "quad_degree": 4
   },
   "solve_uniform": {
@@ -70,7 +72,9 @@
     "compensation": 0.1,
     "stomatal_aspect": 0.02,
     "stomatal_epsilon": 0.002,
+    "ksp_type": "cg",
     "ksp_rtol": 1e-08,
+    "pc_type": "jacobi",
     "quad_degree": 4,
     "order": 2,
     "no_save": false
@@ -85,7 +89,9 @@
     "compensation": 0.1,
     "stomatal_aspect": 0.02,
     "stomatal_epsilon": 0.002,
+    "ksp_type": "cg",
     "ksp_rtol": 1e-08,
+    "pc_type": "jacobi",
     "quad_degree": 4,
     "order": 2,
     "max_workers": 16

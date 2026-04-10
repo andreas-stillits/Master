@@ -30,7 +30,9 @@ class MeshContext:
 class SolverConfig:
     stomatal_aspect: float
     stomatal_epsilon: float
+    ksp_type: str
     ksp_rtol: float
+    pc_type: str
     quad_degree: int
     order: int
 
@@ -40,7 +42,9 @@ class BaseSolver:
         # solver
         self.stomatal_aspect = solver_config.stomatal_aspect
         self.stomatal_epsilon = solver_config.stomatal_epsilon
+        self.ksp_type = solver_config.ksp_type
         self.ksp_rtol = solver_config.ksp_rtol
+        self.pc_type = solver_config.pc_type
         self.quad_degree = solver_config.quad_degree
         self.order = solver_config.order
         # mesh
@@ -255,7 +259,7 @@ class BaseSolver:
         self,
         solution: fem.Function,
     ) -> fem.Function:
-        grad_order = max(self.order - 1, 0)  # Ensure order is at least 1
+        grad_order = max(self.order - 1, 0)  # Ensure order is at least 0
         gradientspace = fem.functionspace(
             self.mesh, ("DG", grad_order, (self.mesh.geometry.dim,))
         )
@@ -268,9 +272,9 @@ class BaseSolver:
             L_proj,
             bcs=[],
             petsc_options={
-                "ksp_type": "cg",
+                "ksp_type": self.ksp_type,
                 "ksp_rtol": self.ksp_rtol,
-                "pc_type": "jacobi",
+                "pc_type": self.pc_type,
             },
         )
         return projection_problem.solve()
@@ -309,9 +313,9 @@ class UniformSolver(BaseSolver):
             L,
             bcs=[],
             petsc_options={
-                "ksp_type": "cg",
+                "ksp_type": self.ksp_type,
                 "ksp_rtol": self.ksp_rtol,
-                "pc_type": "jacobi",
+                "pc_type": self.pc_type,
             },
         )
 
@@ -373,10 +377,9 @@ class DiffusionSolver(BaseSolver):
             L,
             bcs=[bc],
             petsc_options={
-                "ksp_type": "cg",
+                "ksp_type": self.ksp_type,
                 "ksp_rtol": self.ksp_rtol,
-                "pc_type": "hypre",
-                "pc_hypre_type": "boomeramg",
+                "pc_type": self.pc_type,
             },
         )
 

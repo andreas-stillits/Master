@@ -48,7 +48,9 @@ def _cmd(args: argparse.Namespace) -> None:
     solver_config = UniformSolverConfig(
         cmdconfig.stomatal_aspect,
         cmdconfig.stomatal_epsilon,
+        cmdconfig.ksp_type,
         cmdconfig.ksp_rtol,
+        cmdconfig.pc_type,
         cmdconfig.quad_degree,
         cmdconfig.order,
     )
@@ -68,7 +70,8 @@ def _cmd(args: argparse.Namespace) -> None:
     )
 
     dataframe = pd.DataFrame(results)
-    dataframe.sort_values(["absorption", "transport"]).reset_index(drop=True)
+    dataframe.sort_values(["absorption", "transport"], inplace=True)
+    dataframe.reset_index(drop=True, inplace=True)
 
     save_dataframe(dataframe, scan_path)
 

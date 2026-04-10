@@ -194,7 +194,9 @@ class ValidationConfig(BaseModel):
     parameters_diffusion: tuple[float, ...] = (0.1, 1.0)  # top_conc, transport
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
+    ksp_type: str = "cg"
     ksp_rtol: float = 1e-8
+    pc_type: str = "jacobi"
     quad_degree: int = 4
 
     cli_hints: ClassVar[dict[str, str]] = {
@@ -210,7 +212,9 @@ class ValidationConfig(BaseModel):
         "parameters_diffusion": "Tuple of parameters for diffusion problem (top_conc, transport)",
         "stomatal_aspect": "Aspect ratio of the stomatal pore for validation problems",
         "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function in validation problems",
+        "ksp_type": "KSP solver type for validation problems",
         "ksp_rtol": "Relative tolerance for the KSP solver in validation problems",
+        "pc_type": "Preconditioner type for validation problems",
         "quad_degree": "Quadrature degree for finite element integration in validation problems",
     }
 
@@ -228,7 +232,9 @@ class UniformSolutionConfig(BaseModel):
     compensation: float = 0.1
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
+    ksp_type: str = "cg"
     ksp_rtol: float = 1e-8
+    pc_type: str = "jacobi"
     quad_degree: int = 4
     order: int = 2
     no_save: bool = False
@@ -239,7 +245,9 @@ class UniformSolutionConfig(BaseModel):
         "compensation": "Boundary condition value for the mesophyll flux",
         "stomatal_aspect": "Aspect ratio of the stomatal pore",
         "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function",
+        "ksp_type": "KSP solver type for problem solution",
         "ksp_rtol": "Relative tolerance for the KSP solver",
+        "pc_type": "Preconditioner type for problem solution",
         "quad_degree": "Quadrature degree for finite element integration",
         "order": "Order of the finite element method",
         "no_save": "Whether to save the solution to a file (put flag for true to skip saving)",
@@ -263,7 +271,9 @@ class ScanningConfig(BaseModel):
     compensation: float = 0.1
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
+    ksp_type: str = "cg"
     ksp_rtol: float = 1e-8
+    pc_type: str = "jacobi"
     quad_degree: int = 4
     order: int = 2
     max_workers: int = 16
@@ -278,7 +288,9 @@ class ScanningConfig(BaseModel):
         "compensation": "Boundary condition value for the mesophyll flux",
         "stomatal_aspect": "Aspect ratio of the stomatal pore",
         "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function",
+        "ksp_type": "KSP solver type for problem solution",
         "ksp_rtol": "Relative tolerance for the KSP solver",
+        "pc_type": "Preconditioner type for problem solution",
         "quad_degree": "Quadrature degree for finite element integration",
         "order": "Order of the finite element method",
         "max_workers": "Maximum number of worker processes for parallel execution",
