@@ -6,12 +6,12 @@ import pandas as pd
 
 from ...config.declaration import ScanningConfig
 from ...core.io import save_dataframe
+from ...core.plotting.scanning import plot_scanning_results
 from ...core.scanning import (
     generate_workload,
     run_batch,
 )
 from ...core.solvers import UniformSolver, UniformSolverConfig
-from ...core.plotting.scanning import plot_scanning_results
 from ...utilities.parallel import distribute, generate_batches_round_robin
 from ..shared import (
     derive_cli_flags_from_config,
@@ -76,7 +76,7 @@ def _cmd(args: argparse.Namespace) -> None:
     # annotate sample id to ease later aggregation across scans
     dataframe["sample_id"] = sample_id
 
-    plot_scanning_results(dataframe, process_paths.plots, show=False)
+    plot_scanning_results(dataframe, process_paths.plots)
 
     save_dataframe(dataframe, scan_path)
 
