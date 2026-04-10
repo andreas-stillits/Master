@@ -148,7 +148,7 @@ def create_bc_adherence_figure(df: pd.DataFrame, ax0: plt.Axes, ax1: plt.Axes) -
     _std_layout(
         ax1,
         xlabel="Resolution factor",
-        ylabel="Relative error",
+        ylabel="Relative difference",
         title="Robin BC adherence",
         ylog=False,
     )
@@ -213,7 +213,7 @@ def create_convergence_figure(
     _std_layout(
         ax,
         xlabel="Resolution factor",
-        ylabel="Relative error",
+        ylabel="Relative difference to CG2",
         title="Convergence to target CG2 solution",
         ylog=True,
         ymin=1e-4,
