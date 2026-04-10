@@ -11,6 +11,7 @@ from ...core.scanning import (
     run_batch,
 )
 from ...core.solvers import UniformSolver, UniformSolverConfig
+from ...core.plotting.scanning import plot_scanning_results
 from ...utilities.parallel import distribute, generate_batches_round_robin
 from ..shared import (
     derive_cli_flags_from_config,
@@ -72,6 +73,10 @@ def _cmd(args: argparse.Namespace) -> None:
     dataframe = pd.DataFrame(results)
     dataframe.sort_values(["absorption", "transport"], inplace=True)
     dataframe.reset_index(drop=True, inplace=True)
+    # annotate sample id to ease later aggregation across scans
+    dataframe["sample_id"] = sample_id
+
+    plot_scanning_results(dataframe, process_paths.plots, show=False)
 
     save_dataframe(dataframe, scan_path)
 
@@ -87,6 +92,7 @@ def _cmd(args: argparse.Namespace) -> None:
         inputs={"volumetric_mesh": str(mesh_path.expanduser().resolve())},
         outputs={
             "scan_results": str(scan_path.expanduser().resolve()),
+            "plot_results": str(process_paths.plots.expanduser().resolve()),
         },
         metadata=metadata,
     )

@@ -11,7 +11,7 @@ from ...core.io import (
     load_dataframe,
     save_dataframe,
 )
-from ...core.plotting import plot_validation_results
+from ...core.plotting.validation import plot_validation_results
 from ...core.solvers import (
     DiffusionSolver,
     DiffusionSolverConfig,

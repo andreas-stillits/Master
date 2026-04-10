@@ -525,6 +525,10 @@ class ScanningPaths(ProcessPathsBase):
     def scan(self) -> Path:
         return self.dir / "dataframe.csv"
 
+    @property
+    def plots(self) -> Path:
+        return ensure_dir(self.dir / "plots")
+
     def require_scan(self) -> Path:
         self.require_dir()
         require_file(self.scan)

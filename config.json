@@ -43,8 +43,8 @@
   },
   "validation": {
     "tag": "newtest",
-    "no_meshing": false,
-    "no_solving": false,
+    "no_meshing": true,
+    "no_solving": true,
     "no_show": false,
     "max_workers": 16,
     "resolution_factor_max": 4.0,
@@ -82,10 +82,10 @@
   "scan": {
     "absorption_min": 0.01,
     "absorption_max": 100.0,
-    "absorption_num": 10,
+    "absorption_num": 20,
     "transport_min": 0.01,
     "transport_max": 100.0,
-    "transport_num": 10,
+    "transport_num": 20,
     "compensation": 0.1,
     "stomatal_aspect": 0.02,
     "stomatal_epsilon": 0.002,
