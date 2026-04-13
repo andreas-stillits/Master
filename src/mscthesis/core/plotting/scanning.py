@@ -80,7 +80,8 @@ def plot_scanning_results(
     # create ias resistance figure
     fig, ax = figure(size="single")
     std_layout(ax, title=r"IAS Resistance $r_{ias}$")
-    r_ias = (chi_i - chi_m) / flux
+    plug_area = df.pivot(**pivot_args, values="plug_area")
+    r_ias = (chi_i - chi_m) / (flux / plug_area)
     plot_heatmap(fig, ax, r_ias)
     save(fig, output_dir / "ias_resistance.pdf")
     #

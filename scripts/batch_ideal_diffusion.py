@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from argparse import ArgumentParser
 from pathlib import Path
 from typing import Any
 
@@ -9,20 +10,19 @@ import pandas as pd
 from mscthesis.config.declaration import ProjectConfig
 from mscthesis.core.io import load_dataframe, load_volumetric_mesh, save_dataframe
 from mscthesis.core.meshing.gmeshing import build_cylinder_model
+from mscthesis.core.plotting.ideal_diffusion import plot_diffusion_results
 from mscthesis.core.solvers import DiffusionSolver, DiffusionSolverConfig
 from mscthesis.utilities.parallel import distribute
 from mscthesis.utilities.paths import DiffusionPaths, ProjectPaths, require_file
-
-from argparse import ArgumentParser
 
 MAX_WORKERS: int = 16
 PLUG_ASPECT_MIN: float = 0.10
 PLUG_ASPECT_MAX: float = 0.50
 PLUG_RESOLUTION: int = 9
-STOMATAL_ASPECT_MIN: float = 0.10
+STOMATAL_ASPECT_MIN: float = 0.02
 STOMATAL_ASPECT_MAX: float = 0.50
-STOMATAL_RESOLUTION: int = 9
-STOMATAL_EPSILON: float = 0.01
+STOMATAL_RESOLUTION: int = 25
+STOMATAL_EPSILON: float = 0.002
 
 KSP_TYPE: str = "cg"
 KSP_RTOL: float = 1e-8
@@ -175,7 +175,7 @@ def main() -> int:
 
     require_file(diffusion_paths.results)
     dataframe = load_dataframe(diffusion_paths.results)
-    print("dataframe loaded with shape:", dataframe.shape)
+    plot_diffusion_results(dataframe, diffusion_paths.plots)
 
     return 0
 

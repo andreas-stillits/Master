@@ -369,6 +369,10 @@ class DiffusionPaths:
     def results(self) -> Path:
         return self.dir / "results.csv"
 
+    @property
+    def plots(self) -> Path:
+        return ensure_dir(self.dir / "plots")
+
     def require_dir(self) -> Path:
         return require_dir(self.dir)
 
