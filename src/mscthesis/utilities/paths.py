@@ -228,8 +228,17 @@ class ProjectPaths:
     def validation(self) -> Path:
         return self.base / "validation"
 
+    @property
+    def diffusion(self) -> Path:
+        return self.base / "diffusion"
+
     def validate(self, tag: str) -> ValidationPaths:
         return ValidationPaths(self, tag)
+
+    def diffuse(self) -> DiffusionPaths:
+        return DiffusionPaths(
+            self,
+        )
 
     def sample(self, sample_id: str) -> SamplePaths:
         return SamplePaths(self, sample_id)
@@ -258,6 +267,10 @@ class ProjectPaths:
         self.require_base()
         return ensure_dir(self.validation)
 
+    def ensure_diffusion_root(self) -> Path:
+        self.require_base()
+        return ensure_dir(self.diffusion)
+
 
 @dataclass(frozen=True)
 class ValidationPaths:
@@ -266,7 +279,7 @@ class ValidationPaths:
 
     @property
     def dir(self) -> Path:
-        return self.paths.base / "validation" / self.tag
+        return self.paths.validation / self.tag
 
     @property
     def results(self) -> Path:
@@ -340,6 +353,50 @@ class ValidationPaths:
             return self.ensure_solutions_dir() / "CG2" / "solution.bp"
         else:
             raise ValueError(f"Unsupported order: {order}")
+
+
+@dataclass(frozen=True)
+class DiffusionPaths:
+    paths: ProjectPaths
+
+    @property
+    def dir(self) -> Path:
+        return self.paths.diffusion
+
+    @property
+    def meshes(self) -> Path:
+        return self.dir / "meshes"
+
+    @property
+    def results(self) -> Path:
+        return self.dir / "results.csv"
+
+    def require_dir(self) -> Path:
+        return require_dir(self.dir)
+
+    def ensure_dir(self) -> Path:
+        self.paths.require_base()
+        return ensure_dir(self.dir)
+
+    def ensure_meshes_dir(self) -> Path:
+        self.ensure_dir()
+        return ensure_dir(self.meshes)
+
+    def get_mesh_dir(self, tag: str) -> Path:
+        self.ensure_meshes_dir()
+        return ensure_dir(self.meshes / tag)
+
+    def get_mesh_file(self, tag: str) -> Path:
+        return self.get_mesh_dir(tag) / "volumetric_mesh.msh"
+
+    def require_mesh_file(self, tag: str) -> Path:
+        mesh_file = self.get_mesh_file(tag)
+        require_file(mesh_file)
+        return require_extension(mesh_file, ".msh")
+
+    def require_results_file(self) -> Path:
+        require_file(self.results)
+        return require_extension(self.results, ".csv")
 
 
 @dataclass(frozen=True)
