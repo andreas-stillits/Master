@@ -27,10 +27,6 @@ packages = ["src/mscthesis"]
 dev = ["ruff", "black", "mypy", "pytest"]
 
 
-[tool.black]
-line-length = 88
-target-version = ['py312']
-
 [tool.ruff]
 line-length = 88
 target-version = "py312"
@@ -44,7 +40,8 @@ select = [
 
 ignore = [
     "E501", # line length handled by black
-    "E731"  # discriminate lambda functions
+    "E731",  # discriminate lambda functions
+    "F401", # ignore unused imports, e.g. for __init__.py files
 ]
 
 [tool.ruff.lint.isort]

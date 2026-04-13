@@ -173,6 +173,7 @@ def setup_command(args: argparse.Namespace) -> tuple[ProjectPaths, ProjectConfig
     paths.ensure_inventories_root()
     paths.ensure_processes_root()
     paths.ensure_stats_root()
+    paths.ensure_diffusion_root()
 
     config: ProjectConfig = args.config
 

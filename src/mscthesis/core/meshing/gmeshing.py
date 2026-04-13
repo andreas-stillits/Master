@@ -453,3 +453,164 @@ def run_gmsh_session(
     gmsh.write(str(output_mesh_file))
 
     return _metadata(plug_aspect, mesophyll_area)
+
+
+@log_call()
+def build_cylinder_model(
+    output_mesh_file: str | Path,
+    plug_aspect: float,
+    global_resolution_factor: float,
+    min_stomatal_feature: float,
+    min_stomatal_dist_factor: float,
+    max_stomatal_dist_factor: float,
+    min_boundary_dist_factor: float,
+    max_boundary_dist_factor: float,
+    min_points_boundary: int,
+    max_points_boundary: int,
+    tolerance: float,
+) -> dict[str, Any]:
+    """
+    Build a simple cylinder model in gmsh with the given aspect ratio.
+    Args:
+        output_mesh_file (str | Path): Path to the output mesh file
+        plug_aspect (float): Aspect ratio of the cylinder (radius/height)
+        global_resolution_factor (float): Factor for global mesh resolution
+        min_stomatal_feature (float): Minimum feature size for stomata
+        min_stomatal_dist_factor (float): Factor for minimum stomatal distance
+        max_stomatal_dist_factor (float): Factor for maximum stomatal distance
+        min_boundary_dist_factor (float): Factor for minimum boundary distance
+        max_boundary_dist_factor (float): Factor for maximum boundary distance
+        min_points_boundary (int): Minimum number of points on boundary
+        max_points_boundary (int): Maximum number of points on boundary
+        tolerance (float): Tolerance for surface identification
+    Returns:
+        dict[str, Any]: metadata
+    """
+    _silent_initialize()
+    gmsh.model.add("Ideal cylinder Model")
+    kernel.synchronize()
+    # construct cylinder
+    height = 1.0
+    radius = plug_aspect * height
+    bottom_surface = (0, 0, 0)
+    axis = (0, 0, height)
+    cylinder = [(3, kernel.addCylinder(*bottom_surface, *axis, radius))]
+    kernel.synchronize()
+
+    # assign physical groups
+    # determine curved face tag
+    # OBS: this approach of identification by area only works if the curved area 2 pi r is unique up to tolerace
+    # However, top and bottom surfaces will always be distinctly caught by the COM z-coordinate check below
+    # calculate target curved area from cylinder dimensions
+    curved_area_target = 2 * np.pi * radius
+
+    curved_area_found = []
+    curved_area_tag = None
+    top_area_tag = None
+    bottom_area_tag = None
+
+    def _iscurved(tag: int) -> bool:
+        area = kernel.getMass(2, tag)
+        trigger = abs(area / curved_area_target - 1) <= tolerance
+        if trigger:
+            curved_area_found.append(area)
+        return trigger
+
+    # airspace
+    gmsh.model.addPhysicalGroup(3, [tag for dim, tag in cylinder], 1, name="airspace")
+
+    # ====== surfaces ======
+    # get all surfaces
+    surfaces = gmsh.model.getEntities(dim=2)
+
+    mesophyll_surface_tags = []
+    for dim, tag in surfaces:
+        com = gmsh.model.occ.getCenterOfMass(dim, tag)
+        if np.isclose(com[2], 1.0):
+            # top surface
+            gmsh.model.addPhysicalGroup(2, [tag], 2, name="top_surface")
+            top_area_tag = tag
+        elif np.isclose(com[2], 0.0):
+            # bottom surface
+            gmsh.model.addPhysicalGroup(2, [tag], 3, name="bottom_surface")
+            bottom_area_tag = tag
+        elif _iscurved(tag):
+            # curved surface of cylinder
+            gmsh.model.addPhysicalGroup(2, [tag], 4, name="curved_surface")
+            curved_area_tag = tag
+        else:
+            # other surfaces
+            mesophyll_surface_tags.append(tag)
+
+    assert (
+        len(mesophyll_surface_tags) == 0
+    ), f"Error identifying surfaces. Found unexpected additional surfaces with tags: {mesophyll_surface_tags}"
+
+    assert (
+        len(curved_area_found) == 1
+    ), f"Error identifying curved face of cylinder. Found {len(curved_area_found)} curved faces with relative errors from target: {[area/curved_area_target - 1 for area in curved_area_found]}"
+
+    assert (
+        top_area_tag is not None and bottom_area_tag is not None
+    ), "Error identifying top or bottom surface of cylinder"
+
+    tags = {
+        "mesophyll_surface_tags": mesophyll_surface_tags,
+        "curved_area_tag": curved_area_tag,
+        "top_area_tag": top_area_tag,
+        "bottom_area_tag": bottom_area_tag,
+    }
+    kernel.synchronize()
+
+    # mesh and write to file
+    # Calculate resolution and distance parameters based on the provided factors and the size of the plug
+    min_stomatal_res = min_stomatal_feature * global_resolution_factor
+    min_boundary_res = (
+        2 * np.pi * plug_aspect / max_points_boundary * global_resolution_factor
+    )
+    max_global_res = (
+        2 * np.pi * plug_aspect / min_points_boundary * global_resolution_factor
+    )
+    #
+    min_stomatal_dist = min_stomatal_feature * min_stomatal_dist_factor
+    max_stomatal_dist = min_stomatal_feature * max_stomatal_dist_factor
+    min_boundary_dist = (
+        min_boundary_res * min_boundary_dist_factor / global_resolution_factor
+    )
+    max_boundary_dist = (
+        min_boundary_res * max_boundary_dist_factor / global_resolution_factor
+    )
+
+    # control distance to bottom inlet surface
+    inlet_distance = field.add("Distance")
+    field.setNumbers(inlet_distance, "FacesList", [tags["bottom_area_tag"]])
+    inlet_threshold = field.add("Threshold")
+    field.setNumber(inlet_threshold, "InField", inlet_distance)
+    field.setNumber(inlet_threshold, "LcMin", min_stomatal_res)
+    field.setNumber(inlet_threshold, "LcMax", max_global_res)
+    field.setNumber(inlet_threshold, "DistMin", min_stomatal_dist)
+    field.setNumber(inlet_threshold, "DistMax", max_stomatal_dist)
+    #
+    # control distance to plug boundary
+    boundary_distance = field.add("Distance")
+    field.setNumbers(boundary_distance, "FacesList", [tags["curved_area_tag"]])
+    boundary_threshold = field.add("Threshold")
+    field.setNumber(boundary_threshold, "InField", boundary_distance)
+    field.setNumber(boundary_threshold, "LcMin", min_boundary_res)
+    field.setNumber(boundary_threshold, "LcMax", max_global_res)
+    field.setNumber(boundary_threshold, "DistMin", min_boundary_dist)
+    field.setNumber(boundary_threshold, "DistMax", max_boundary_dist)
+    #
+    minimum_field = field.add("Min")
+    field.setNumbers(
+        minimum_field,
+        "FieldsList",
+        [inlet_threshold, boundary_threshold],
+    )
+    field.setAsBackgroundMesh(minimum_field)
+    kernel.synchronize()
+
+    gmsh.model.mesh.generate(3)
+    gmsh.write(str(output_mesh_file))
+
+    return {}

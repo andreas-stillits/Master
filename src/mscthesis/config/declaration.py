@@ -324,7 +324,6 @@ class ProjectConfig(BaseModel):
     validation: ValidationConfig = ValidationConfig()
     solve_uniform: UniformSolutionConfig = UniformSolutionConfig()
     scan: ScanningConfig = ScanningConfig()
-    diffuse: DiffusionConfig = DiffusionConfig()
 
     # helper function for filtering after model_config.json_schema_extra.expose
     def _filter_config_for_exposure(self) -> dict[str, Any]:

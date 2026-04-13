@@ -236,9 +236,7 @@ class ProjectPaths:
         return ValidationPaths(self, tag)
 
     def diffuse(self) -> DiffusionPaths:
-        return DiffusionPaths(
-            self,
-        )
+        return DiffusionPaths(self)
 
     def sample(self, sample_id: str) -> SamplePaths:
         return SamplePaths(self, sample_id)
@@ -382,15 +380,15 @@ class DiffusionPaths:
         self.ensure_dir()
         return ensure_dir(self.meshes)
 
-    def get_mesh_dir(self, tag: str) -> Path:
+    def get_mesh_dir(self, aspect: float) -> Path:
         self.ensure_meshes_dir()
-        return ensure_dir(self.meshes / tag)
+        return ensure_dir(self.meshes / f"aspect_{aspect:.2f}")
 
-    def get_mesh_file(self, tag: str) -> Path:
-        return self.get_mesh_dir(tag) / "volumetric_mesh.msh"
+    def get_mesh_file(self, aspect: float) -> Path:
+        return self.get_mesh_dir(aspect) / "volumetric_mesh.msh"
 
-    def require_mesh_file(self, tag: str) -> Path:
-        mesh_file = self.get_mesh_file(tag)
+    def require_mesh_file(self, aspect: float) -> Path:
+        mesh_file = self.get_mesh_file(aspect)
         require_file(mesh_file)
         return require_extension(mesh_file, ".msh")
 
@@ -590,17 +588,3 @@ class ScanningPaths(ProcessPathsBase):
         self.require_dir()
         require_file(self.scan)
         return require_extension(self.scan, ".csv")
-
-
-@dataclass(frozen=True)
-class DiffusionPaths(ProcessPathsBase):
-    name: str = "diffusion"
-
-    @property
-    def diffusion(self) -> Path:
-        return self.dir / "diffusion.json"
-
-    def require_diffusion(self) -> Path:
-        self.require_dir()
-        require_file(self.diffusion)
-        return require_extension(self.diffusion, ".json")
