@@ -63,13 +63,14 @@ def visualize_volumetric_mesh(mesh_path: str | Path) -> None:
 @log_call()
 def visualize_fem_solution(solution: fem.Function, mesh: Mesh) -> None:
     """
-        Visualize a finite element solution using PyVista
-        Args:
-            solution (fem.Function): The finite element solution to visualize
-            mesh (Mesh): The mesh on which the solution is defined
-    <"""
-    topology, cell_types, geometry = vtk_mesh(mesh, mesh.topology.dim)
+    Visualize a finite element solution using PyVista
+    Args:
+        solution (fem.Function): The finite element solution to visualize
+        mesh (Mesh): The mesh on which the solution is defined
+    """
+    topology, cell_types, geometry = vtk_mesh(solution.function_space)
     grid = pv.UnstructuredGrid(topology, cell_types, geometry)
+
     grid.point_data["solution"] = solution.x.array.real
 
     xmin, xmax, ymin, ymax, zmin, zmax = grid.bounds
@@ -86,7 +87,7 @@ def visualize_fem_solution(solution: fem.Function, mesh: Mesh) -> None:
     for zc in zcenters:
         slices = grid.slice(normal="z", origin=(0, 0, zc * (zmax - zmin) + zmin))
         slices = cast(pv.MultiBlock, slices)
-        p.add_mesh(slices, scalars="solution", cmap="magma", clim=[0.00, 1.00])
+        p.add_mesh(slices, scalars="solution", cmap="inferno", clim=[0.00, 1.00])
     p.add_mesh(grid.outline(), color="k")
     p.show_axes()
     p.show()

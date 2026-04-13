@@ -31,7 +31,8 @@ def _npy(df: pd.DataFrame, key: str) -> np.ndarray:
 
 
 def _rel_error(x: np.ndarray, y: np.ndarray) -> np.ndarray:
-    rel_error = np.abs((x - y) / x)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        rel_error = np.abs((x - y) / x)
     rel_error[np.isclose(rel_error, 0.0)] = np.nan
     return rel_error
 

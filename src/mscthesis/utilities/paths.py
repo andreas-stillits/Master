@@ -380,12 +380,9 @@ class DiffusionPaths:
         self.ensure_dir()
         return ensure_dir(self.meshes)
 
-    def get_mesh_dir(self, aspect: float) -> Path:
-        self.ensure_meshes_dir()
-        return ensure_dir(self.meshes / f"aspect_{aspect:.2f}")
-
     def get_mesh_file(self, aspect: float) -> Path:
-        return self.get_mesh_dir(aspect) / "volumetric_mesh.msh"
+        self.ensure_meshes_dir()
+        return self.meshes / f"volumetric_mesh_{aspect:.2f}.msh"
 
     def require_mesh_file(self, aspect: float) -> Path:
         mesh_file = self.get_mesh_file(aspect)

@@ -384,7 +384,7 @@ class DiffusionSolver(BaseSolver):
         )
 
     def solve_for(
-        self, transport: float, boundary_conc: float
+        self, boundary_conc: float, transport: float
     ) -> tuple[fem.Function, dict[str, Any]]:
         self.boundary_conc.value = default_scalar_type(boundary_conc)
         self.stomatal_coeff.value = default_scalar_type(
