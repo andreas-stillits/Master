@@ -60,6 +60,19 @@ def plot_scanning_results(
     fig, ax = figure(size="single")
     std_layout(ax, title=r"Substomatal Concentration $\chi_i$")
     chi_i = df.pivot(**pivot_args, values="substomatal_mean")
+
+    #
+    # SHOWCASING THEORETICAL CURVES
+    chiis = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
+    phis = np.logspace(-2, 2, 50)
+    chi_ = 0.1
+    epsilon = 1 / 2.1
+    for chii in chiis:
+        gammas = (chii - chi_) / (1 - chii) * (epsilon * phis) / (epsilon + phis)
+        ax.plot(phis, gammas, color="lightblue", linestyle="-", linewidth=0.5)
+    #
+    #
+
     plot_heatmap(fig, ax, chi_i)
     save(fig, output_dir / "chi_i.pdf")
     #

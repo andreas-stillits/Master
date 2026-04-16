@@ -40,7 +40,7 @@ MIN_POINTS_BOUNDARY: int = 60
 MAX_POINTS_BOUNDARY: int = 40
 TOLERANCE: float = 1e-2
 
-TRANSPORT = 1.0
+TRANSPORT = 10.0
 TOP_CONCENTRATION = 0.1
 
 
@@ -175,7 +175,10 @@ def main() -> int:
 
     require_file(diffusion_paths.results)
     dataframe = load_dataframe(diffusion_paths.results)
-    plot_diffusion_results(dataframe, diffusion_paths.plots)
+    try:
+        plot_diffusion_results(dataframe, diffusion_paths.plots)
+    except Exception as e:
+        pass
 
     return 0
 
