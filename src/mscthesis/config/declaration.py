@@ -187,13 +187,14 @@ class ValidationConfig(BaseModel):
     resolution_factor_num: int = 16
     problem_type: Literal["uniform", "diffusion"] = "uniform"
     parameters_uniform: tuple[float, ...] = (
+        0.75,
         1.0,
-        1.0,
-        0.1,
-    )  # absorption, transport, compensation
-    parameters_diffusion: tuple[float, ...] = (0.1, 1.0)  # top_conc, transport
+        0.2,
+    )  # chii, absorption, compensation
+    parameters_diffusion: tuple[float, ...] = (0.75, 0.2)  # chii, chi_top
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
+    kappa: float = 1e4
     ksp_type: str = "cg"
     ksp_rtol: float = 1e-8
     pc_type: str = "jacobi"
@@ -208,10 +209,11 @@ class ValidationConfig(BaseModel):
         "resolution_factor_max": "Maximum factor for determining mesh resolution",
         "resolution_factor_num": "Number of resolution factors to test (logspaced between 1.0 and max)",
         "problem_type": "Type of problem to solve for validation, choose from: uniform, diffusion",
-        "parameters_uniform": "Tuple of parameters for uniform problem (absorption, transport, compensation)",
-        "parameters_diffusion": "Tuple of parameters for diffusion problem (top_conc, transport)",
+        "parameters_uniform": "Tuple of parameters for uniform problem (chii, absorption, compensation)",
+        "parameters_diffusion": "Tuple of parameters for diffusion problem (chii, chi_top)",
         "stomatal_aspect": "Aspect ratio of the stomatal pore for validation problems",
         "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function in validation problems",
+        "kappa": "Penalty parameter for the Dirichlet condition in diffusion validation problems",
         "ksp_type": "KSP solver type for validation problems",
         "ksp_rtol": "Relative tolerance for the KSP solver in validation problems",
         "pc_type": "Preconditioner type for validation problems",
@@ -227,11 +229,12 @@ class UniformSolutionConfig(BaseModel):
         json_schema_extra={"expose": True, "commands": ["solve-uniform"]},
     )
 
+    chii: float = 0.75
     absorption: float = 1.0
-    transport: float = 1.0
     compensation: float = 0.1
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
+    kappa: float = 1e4
     ksp_type: str = "cg"
     ksp_rtol: float = 1e-8
     pc_type: str = "jacobi"
@@ -240,11 +243,12 @@ class UniformSolutionConfig(BaseModel):
     no_save: bool = False
 
     cli_hints: ClassVar[dict[str, str]] = {
+        "chii": "Chii parameter for the uniform problem",
         "absorption": "Absorption balance",
-        "transport": "Transport Balance",
         "compensation": "Boundary condition value for the mesophyll flux",
         "stomatal_aspect": "Aspect ratio of the stomatal pore",
         "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function",
+        "kappa": "Penalty parameter for the Dirichlet condition in diffusion validation problems",
         "ksp_type": "KSP solver type for problem solution",
         "ksp_rtol": "Relative tolerance for the KSP solver",
         "pc_type": "Preconditioner type for problem solution",
@@ -265,12 +269,13 @@ class ScanningConfig(BaseModel):
     absorption_min: float = 0.01
     absorption_max: float = 100.0
     absorption_num: int = 10
-    transport_min: float = 0.01
-    transport_max: float = 100.0
-    transport_num: int = 10
+    chii_min: float = 0.11
+    chii_max: float = 0.99
+    chii_num: int = 10
     compensation: float = 0.1
     stomatal_aspect: float = 0.02
     stomatal_epsilon: float = 0.002
+    kappa: float = 1e4
     ksp_type: str = "cg"
     ksp_rtol: float = 1e-8
     pc_type: str = "jacobi"
@@ -282,12 +287,13 @@ class ScanningConfig(BaseModel):
         "absorption_min": "Minimum absorption value for scanning",
         "absorption_max": "Maximum absorption value for scanning",
         "absorption_num": "Number of absorption values to scan",
-        "transport_min": "Minimum transport value for scanning",
-        "transport_max": "Maximum transport value for scanning",
-        "transport_num": "Number of transport values to scan",
+        "chii_min": "Minimum substomatal conc value for scanning",
+        "chii_max": "Maximum substomatal conc value for scanning",
+        "chii_num": "Number of substomatal conc values to scan",
         "compensation": "Boundary condition value for the mesophyll flux",
         "stomatal_aspect": "Aspect ratio of the stomatal pore",
         "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function",
+        "kappa": "Penalty parameter for the Dirichlet condition in diffusion validation problems",
         "ksp_type": "KSP solver type for problem solution",
         "ksp_rtol": "Relative tolerance for the KSP solver",
         "pc_type": "Preconditioner type for problem solution",

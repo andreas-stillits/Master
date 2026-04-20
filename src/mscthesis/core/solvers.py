@@ -71,7 +71,7 @@ class BaseSolver:
         # coefficients
         self.compensation = fem.Constant(self.mesh, default_scalar_type(0.0))
         self.surface_coeff = fem.Constant(self.mesh, default_scalar_type(0.0))
-        self.chi_i = fem.Constant(self.mesh, default_scalar_type(0.0))
+        self.chii = fem.Constant(self.mesh, default_scalar_type(0.0))
         # dimensions and area fractions
         self.tags = Tags()
         # airspace
@@ -130,7 +130,7 @@ class BaseSolver:
                 fem.form(
                     self.kappa
                     * self.envelope
-                    * (solution - self.chi_i)
+                    * (solution - self.chii)
                     * self.ds(self.tags.BOTTOM)  # type: ignore[reportArgumentType]
                 )
             )
@@ -317,7 +317,7 @@ class UniformSolver(BaseSolver):
         )
         L = self.surface_coeff * self.compensation * v * self.ds(
             self.tags.MESOPHYLL
-        ) + self.kappa * self.envelope * self.chi_i * v * self.ds(self.tags.BOTTOM)
+        ) + self.kappa * self.envelope * self.chii * v * self.ds(self.tags.BOTTOM)
 
         self.problem = LinearProblem(
             a,
@@ -331,12 +331,12 @@ class UniformSolver(BaseSolver):
         )
 
     def solve_for(
-        self, chi_i: float, absorption: float, compensation: float
+        self, chii: float, absorption: float, compensation: float
     ) -> tuple[fem.Function, dict[str, Any]]:
         self.surface_coeff.value = default_scalar_type(
             absorption / self.mesophyll_area_fraction
         )
-        self.chi_i.value = default_scalar_type(chi_i)
+        self.chii.value = default_scalar_type(chii)
         self.compensation.value = default_scalar_type(compensation)
         solution = self.problem.solve()
         gradient = self.compute_gradient(solution)
@@ -379,7 +379,7 @@ class DiffusionSolver(BaseSolver):
         a = ufl.inner(ufl.grad(chi), ufl.grad(v)) * self.dx(
             self.tags.AIRSPACE
         ) + self.kappa * self.envelope * chi * v * self.ds(self.tags.BOTTOM)
-        L = self.kappa * self.envelope * self.chi_i * v * self.ds(self.tags.BOTTOM)
+        L = self.kappa * self.envelope * self.chii * v * self.ds(self.tags.BOTTOM)
 
         self.problem = LinearProblem(
             a,
@@ -393,9 +393,9 @@ class DiffusionSolver(BaseSolver):
         )
 
     def solve_for(
-        self, chi_i: float, chi_top: float
+        self, chii: float, chi_top: float
     ) -> tuple[fem.Function, dict[str, Any]]:
-        self.chi_i.value = default_scalar_type(chi_i)
+        self.chii.value = default_scalar_type(chii)
         self.chi_top.value = default_scalar_type(chi_top)
         solution = self.problem.solve()
         gradient = self.compute_gradient(solution)

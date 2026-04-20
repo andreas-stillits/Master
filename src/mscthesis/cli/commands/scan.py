@@ -40,15 +40,16 @@ def _cmd(args: argparse.Namespace) -> None:
         cmdconfig.absorption_num,
     )
 
-    transport_range = (
-        cmdconfig.transport_min,
-        cmdconfig.transport_max,
-        cmdconfig.transport_num,
+    chii_range = (
+        cmdconfig.chii_min,
+        cmdconfig.chii_max,
+        cmdconfig.chii_num,
     )
 
     solver_config = UniformSolverConfig(
         cmdconfig.stomatal_aspect,
         cmdconfig.stomatal_epsilon,
+        cmdconfig.kappa,
         cmdconfig.ksp_type,
         cmdconfig.ksp_rtol,
         cmdconfig.pc_type,
@@ -56,9 +57,7 @@ def _cmd(args: argparse.Namespace) -> None:
         cmdconfig.order,
     )
 
-    workload = generate_workload(
-        absorption_range, transport_range, cmdconfig.compensation
-    )
+    workload = generate_workload(chii_range, absorption_range, cmdconfig.compensation)
     batches = generate_batches_round_robin(workload, cmdconfig.max_workers)
 
     results = distribute(
@@ -71,7 +70,7 @@ def _cmd(args: argparse.Namespace) -> None:
     )
 
     dataframe = pd.DataFrame(results)
-    dataframe.sort_values(["absorption", "transport"], inplace=True)
+    dataframe.sort_values(["chii", "absorption"], inplace=True)
     dataframe.reset_index(drop=True, inplace=True)
     # annotate sample id to ease later aggregation across scans
     dataframe["sample_id"] = sample_id
