@@ -192,9 +192,9 @@ class ValidationConfig(BaseModel):
         0.2,
     )  # chii, absorption, compensation
     parameters_diffusion: tuple[float, ...] = (0.75, 0.2)  # chii, chi_top
-    stomatal_aspect: float = 0.02
-    stomatal_epsilon: float = 0.002
-    kappa: float = 1e4
+    stomatal_aspect: float = 0.04
+    stomatal_epsilon: float = 0.02
+    kappa: float = 1e8
     ksp_type: str = "cg"
     ksp_rtol: float = 1e-8
     pc_type: str = "jacobi"
@@ -232,9 +232,9 @@ class UniformSolutionConfig(BaseModel):
     chii: float = 0.75
     absorption: float = 1.0
     compensation: float = 0.1
-    stomatal_aspect: float = 0.02
-    stomatal_epsilon: float = 0.002
-    kappa: float = 1e4
+    stomatal_aspect: float = 0.04
+    stomatal_epsilon: float = 0.02
+    kappa: float = 1e8
     ksp_type: str = "cg"
     ksp_rtol: float = 1e-8
     pc_type: str = "jacobi"
@@ -273,9 +273,9 @@ class ScanningConfig(BaseModel):
     chii_max: float = 0.99
     chii_num: int = 10
     compensation: float = 0.1
-    stomatal_aspect: float = 0.02
-    stomatal_epsilon: float = 0.002
-    kappa: float = 1e4
+    stomatal_aspect: float = 0.04
+    stomatal_epsilon: float = 0.02
+    kappa: float = 1e8
     ksp_type: str = "cg"
     ksp_rtol: float = 1e-8
     pc_type: str = "jacobi"

@@ -43,35 +43,37 @@
   },
   "validation": {
     "tag": "newtest",
-    "no_meshing": true,
-    "no_solving": true,
+    "no_meshing": false,
+    "no_solving": false,
     "no_show": false,
     "max_workers": 16,
     "resolution_factor_max": 4.0,
     "resolution_factor_num": 16,
     "problem_type": "uniform",
     "parameters_uniform": [
+      0.75,
       1.0,
-      1.0,
-      0.1
+      0.2
     ],
     "parameters_diffusion": [
-      0.1,
-      1.0
+      0.75,
+      0.2
     ],
-    "stomatal_aspect": 0.02,
-    "stomatal_epsilon": 0.002,
+    "stomatal_aspect": 0.04,
+    "stomatal_epsilon": 0.02,
+    "kappa": 100000000.0,
     "ksp_type": "cg",
     "ksp_rtol": 1e-08,
     "pc_type": "jacobi",
     "quad_degree": 4
   },
   "solve_uniform": {
+    "chii": 0.75,
     "absorption": 1.0,
-    "transport": 1.0,
     "compensation": 0.1,
-    "stomatal_aspect": 0.02,
-    "stomatal_epsilon": 0.002,
+    "stomatal_aspect": 0.04,
+    "stomatal_epsilon": 0.02,
+    "kappa": 100000000.0,
     "ksp_type": "cg",
     "ksp_rtol": 1e-08,
     "pc_type": "jacobi",
@@ -82,21 +84,19 @@
   "scan": {
     "absorption_min": 0.01,
     "absorption_max": 100.0,
-    "absorption_num": 20,
-    "transport_min": 0.01,
-    "transport_max": 100.0,
-    "transport_num": 20,
+    "absorption_num": 10,
+    "chii_min": 0.11,
+    "chii_max": 0.99,
+    "chii_num": 10,
     "compensation": 0.1,
-    "stomatal_aspect": 0.02,
-    "stomatal_epsilon": 0.002,
+    "stomatal_aspect": 0.04,
+    "stomatal_epsilon": 0.02,
+    "kappa": 100000000.0,
     "ksp_type": "cg",
     "ksp_rtol": 1e-08,
     "pc_type": "jacobi",
     "quad_degree": 4,
     "order": 2,
     "max_workers": 16
-  },
-  "diffuse": {
-    "diffusion_coefficient": 1.0
   }
 }

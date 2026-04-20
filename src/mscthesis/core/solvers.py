@@ -104,7 +104,7 @@ class BaseSolver:
         x = ufl.SpatialCoordinate(self.mesh)
         phi = x[0] ** 2 + x[1] ** 2 - self.stomatal_aspect**2  # type: ignore[reportIndexIssue]
         self.envelope = 0.5 * (
-            1 - ufl.tanh(phi / self.stomatal_epsilon / self.plug_aspect**2)
+            1 - ufl.tanh(phi / self.stomatal_epsilon / self.stomatal_aspect**2)
         )
         self.stomatal_area = float(
             fem.assemble_scalar(

@@ -96,9 +96,7 @@ def create_qoi_figure(df: pd.DataFrame, ax0: plt.Axes, ax1: plt.Axes) -> None:
     _std_layout(
         ax0, ylabel="Mean concentrations", title="Conc. QoI", ymin=0.0, ymax=1.05
     )
-    _std_layout(
-        ax1, xlabel="Resolution factor", ylabel="Integral fluxes", title="Flux QoI"
-    )
+    _std_layout(ax1, xlabel="Resolution factor", ylabel="Flow rates", title="Flux QoI")
     return
 
 
@@ -150,7 +148,7 @@ def create_bc_adherence_figure(df: pd.DataFrame, ax0: plt.Axes, ax1: plt.Axes) -
         ax1,
         xlabel="Resolution factor",
         ylabel="Relative difference",
-        title="Robin BC adherence",
+        title="Inlet BC adherence",
         ylog=False,
     )
     return
