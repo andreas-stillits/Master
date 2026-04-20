@@ -30,7 +30,6 @@ class MeshContext:
 class SolverConfig:
     stomatal_aspect: float
     stomatal_epsilon: float
-    kappa: float
     ksp_type: str
     ksp_rtol: float
     pc_type: str
@@ -43,7 +42,6 @@ class BaseSolver:
         # solver
         self.stomatal_aspect = solver_config.stomatal_aspect
         self.stomatal_epsilon = solver_config.stomatal_epsilon
-        self.kappa = solver_config.kappa
         self.ksp_type = solver_config.ksp_type
         self.ksp_rtol = solver_config.ksp_rtol
         self.pc_type = solver_config.pc_type
@@ -71,7 +69,7 @@ class BaseSolver:
         # coefficients
         self.compensation = fem.Constant(self.mesh, default_scalar_type(0.0))
         self.surface_coeff = fem.Constant(self.mesh, default_scalar_type(0.0))
-        self.chi_i = fem.Constant(self.mesh, default_scalar_type(0.0))
+        self.stomatal_coeff = fem.Constant(self.mesh, default_scalar_type(0.0))
         # dimensions and area fractions
         self.tags = Tags()
         # airspace
@@ -128,9 +126,9 @@ class BaseSolver:
         stomatal_flux_equiv = float(
             fem.assemble_scalar(
                 fem.form(
-                    self.kappa
+                    self.stomatal_coeff
                     * self.envelope
-                    * (solution - self.chi_i)
+                    * (1 - solution)
                     * self.ds(self.tags.BOTTOM)  # type: ignore[reportArgumentType]
                 )
             )
@@ -227,14 +225,6 @@ class BaseSolver:
             else 0.0
         )
 
-        # stomatal conductance
-        non_zero_tolerance = 1e-6
-        gamma = (
-            np.abs(stomatal_flux_equiv / (1.0 - substomatal_conc) / self.plug_area)
-            if substomatal_conc < 1.0 - non_zero_tolerance
-            else None
-        )
-
         return {
             "stomatal_flux_direct": stomatal_flux_direct,
             "stomatal_flux_equiv": stomatal_flux_equiv,
@@ -243,7 +233,6 @@ class BaseSolver:
             "curved_flux_direct": curved_flux_direct,
             "top_flux_direct": top_flux_direct,
             "total_flux_direct": total_flux_direct,
-            "gamma": gamma,
             "substomatal_mean": substomatal_conc,
             "top_mean": top_concentration,
             "airspace_mean": airspace_mean_conc,
@@ -313,11 +302,11 @@ class UniformSolver(BaseSolver):
         a = (
             ufl.inner(ufl.grad(chi), ufl.grad(v)) * self.dx(self.tags.AIRSPACE)
             + self.surface_coeff * chi * v * self.ds(self.tags.MESOPHYLL)
-            + self.kappa * self.envelope * chi * v * self.ds(self.tags.BOTTOM)
+            + self.stomatal_coeff * self.envelope * chi * v * self.ds(self.tags.BOTTOM)
         )
         L = self.surface_coeff * self.compensation * v * self.ds(
             self.tags.MESOPHYLL
-        ) + self.kappa * self.envelope * self.chi_i * v * self.ds(self.tags.BOTTOM)
+        ) + self.stomatal_coeff * self.envelope * v * self.ds(self.tags.BOTTOM)
 
         self.problem = LinearProblem(
             a,
@@ -331,12 +320,14 @@ class UniformSolver(BaseSolver):
         )
 
     def solve_for(
-        self, chi_i: float, absorption: float, compensation: float
+        self, absorption: float, transport: float, compensation: float
     ) -> tuple[fem.Function, dict[str, Any]]:
         self.surface_coeff.value = default_scalar_type(
             absorption / self.mesophyll_area_fraction
         )
-        self.chi_i.value = default_scalar_type(chi_i)
+        self.stomatal_coeff.value = default_scalar_type(
+            transport / self.stomatal_area_fraction
+        )
         self.compensation.value = default_scalar_type(compensation)
         solution = self.problem.solve()
         gradient = self.compute_gradient(solution)
@@ -373,13 +364,13 @@ class DiffusionSolver(BaseSolver):
             self.functionspace, self.mesh.topology.dim - 1, top_facets
         )
 
-        self.chi_top = fem.Constant(self.mesh, default_scalar_type(0.0))
-        bc = fem.dirichletbc(self.chi_top, top_dofs, self.functionspace)
+        self.boundary_conc = fem.Constant(self.mesh, default_scalar_type(0.0))
+        bc = fem.dirichletbc(self.boundary_conc, top_dofs, self.functionspace)
 
         a = ufl.inner(ufl.grad(chi), ufl.grad(v)) * self.dx(
             self.tags.AIRSPACE
-        ) + self.kappa * self.envelope * chi * v * self.ds(self.tags.BOTTOM)
-        L = self.kappa * self.envelope * self.chi_i * v * self.ds(self.tags.BOTTOM)
+        ) + self.stomatal_coeff * self.envelope * chi * v * self.ds(self.tags.BOTTOM)
+        L = self.stomatal_coeff * self.envelope * v * self.ds(self.tags.BOTTOM)
 
         self.problem = LinearProblem(
             a,
@@ -393,10 +384,12 @@ class DiffusionSolver(BaseSolver):
         )
 
     def solve_for(
-        self, chi_i: float, chi_top: float
+        self, boundary_conc: float, transport: float
     ) -> tuple[fem.Function, dict[str, Any]]:
-        self.chi_i.value = default_scalar_type(chi_i)
-        self.chi_top.value = default_scalar_type(chi_top)
+        self.boundary_conc.value = default_scalar_type(boundary_conc)
+        self.stomatal_coeff.value = default_scalar_type(
+            transport / self.stomatal_area_fraction
+        )
         solution = self.problem.solve()
         gradient = self.compute_gradient(solution)
         return solution, self.analyze(solution, gradient)
