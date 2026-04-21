@@ -136,11 +136,14 @@ def save_fem_solution(
 
 
 @log_call()
-def load_fem_solution(file_path: str | Path) -> tuple[fem.Function, MeshContext]:
+def load_fem_solution(
+    file_path: str | Path, order: int = 2
+) -> tuple[fem.Function, MeshContext]:
     """
     Load a FEniCSx solution from a .bp file
     Args:
         file_path (str | Path): The path to the .bp file containing the solution.
+        order (int): The polynomial order of the function space.
     Returns:
         tuple[fem.Function, MeshContext]: The loaded solution and mesh context.
     """
@@ -148,7 +151,7 @@ def load_fem_solution(file_path: str | Path) -> tuple[fem.Function, MeshContext]
     mesh = a4x.read_mesh(file_path, MPI.COMM_SELF)
     cell_tags = a4x.read_meshtags(file_path, mesh, meshtag_name="cell_tags")
     facet_tags = a4x.read_meshtags(file_path, mesh, meshtag_name="facet_tags")
-    functionspace = fem.functionspace(mesh, ("Lagrange", 1))
+    functionspace = fem.functionspace(mesh, ("Lagrange", order))
     solution = fem.Function(functionspace)
     a4x.read_function(file_path, solution, name="solution")  # type: ignore[reportArgumentType]
     mesh_ctx = MeshContext(mesh, cell_tags, facet_tags)

@@ -301,8 +301,8 @@ def configure_meshfield(
     plug_aspect: float,
     global_resolution_factor: float,
     min_stomatal_feature: float,
+    max_stomatal_feature: float,
     min_cellular_feature: float,
-    min_stomatal_dist_factor: float,
     max_stomatal_dist_factor: float,
     min_cellular_dist_factor: float,
     max_cellular_dist_factor: float,
@@ -316,11 +316,18 @@ def configure_meshfield(
     Args:
         tags (dict[str, list[int] | int]): Dictionary containing tags for physical groups
         plug_aspect (float): Aspect ratio of the plug (radius/height)
-        stomatal_aspect (float): Aspect ratio of the stomatal cavity.
-        global_resolution_factor (float): Factor to adjust global resolution.
-        cell_resolution_factor (float): Factor to adjust cell resolution.
-        minimum_distance_factor (float): Factor to adjust minimum distance.
-        maximum_distance_factor (float): Factor to adjust maximum distance.
+        global_resolution_factor (float): Factor to adjust global resolution
+        min_stomatal_feature (float): Minimum feature size for stomata
+        max_stomatal_feature (float): Maximum feature size for stomata
+        min_cellular_feature (float): Minimum feature size for mesophyll cells
+        min_stomatal_dist_factor (float): Factor to adjust minimum distance for stomatal mesh
+        max_stomatal_dist_factor (float): Factor to adjust maximum distance for stomatal mesh
+        min_cellular_dist_factor (float): Factor to adjust minimum distance for cellular mesh
+        max_cellular_dist_factor (float): Factor to adjust maximum distance for cellular mesh
+        min_boundary_dist_factor (float): Factor to adjust minimum distance for boundary mesh
+        max_boundary_dist_factor (float): Factor to adjust maximum distance for boundary mesh
+        min_points_boundary (int): Minimum number of points on boundary
+        max_points_boundary (int): Maximum number of points on boundary
     """
     # Calculate resolution and distance parameters based on the provided factors and the size of the plug
     min_stomatal_res = min_stomatal_feature * global_resolution_factor
@@ -332,8 +339,7 @@ def configure_meshfield(
         2 * np.pi * plug_aspect / min_points_boundary * global_resolution_factor
     )
     #
-    min_stomatal_dist = min_stomatal_feature * min_stomatal_dist_factor
-    max_stomatal_dist = min_stomatal_feature * max_stomatal_dist_factor
+    max_stomatal_dist = max_stomatal_feature * max_stomatal_dist_factor
     min_cellular_dist = min_cellular_feature * min_cellular_dist_factor
     max_cellular_dist = min_cellular_feature * max_cellular_dist_factor
     min_boundary_dist = (
@@ -342,16 +348,26 @@ def configure_meshfield(
     max_boundary_dist = (
         min_boundary_res * max_boundary_dist_factor / global_resolution_factor
     )
+    # add a distance field away from a point source at 0,0,0
+    point_tag = kernel.addPoint(0, 0, 0)
+    point_distance = field.add("Distance")
+    field.setNumbers(point_distance, "PointsList", [point_tag])
+    point_threshold = field.add("Threshold")
+    field.setNumber(point_threshold, "InField", point_distance)
+    field.setNumber(point_threshold, "LcMin", min_stomatal_res)
+    field.setNumber(point_threshold, "LcMax", max_global_res)
+    field.setNumber(point_threshold, "DistMin", max_stomatal_feature)
+    field.setNumber(point_threshold, "DistMax", max_stomatal_dist)
 
-    # control distance to bottom inlet surface
-    inlet_distance = field.add("Distance")
-    field.setNumbers(inlet_distance, "FacesList", [tags["bottom_area_tag"]])
-    inlet_threshold = field.add("Threshold")
-    field.setNumber(inlet_threshold, "InField", inlet_distance)
-    field.setNumber(inlet_threshold, "LcMin", min_stomatal_res)
-    field.setNumber(inlet_threshold, "LcMax", max_global_res)
-    field.setNumber(inlet_threshold, "DistMin", min_stomatal_dist)
-    field.setNumber(inlet_threshold, "DistMax", max_stomatal_dist)
+    # # control distance to bottom inlet surface
+    # inlet_distance = field.add("Distance")
+    # field.setNumbers(inlet_distance, "FacesList", [tags["bottom_area_tag"]])
+    # inlet_threshold = field.add("Threshold")
+    # field.setNumber(inlet_threshold, "InField", inlet_distance)
+    # field.setNumber(inlet_threshold, "LcMin", min_stomatal_res)
+    # field.setNumber(inlet_threshold, "LcMax", max_global_res)
+    # field.setNumber(inlet_threshold, "DistMin", min_stomatal_dist)
+    # field.setNumber(inlet_threshold, "DistMax", max_stomatal_dist)
     #
     # control distance to mesophyll cell surfaces
     mesophyll_distance = field.add("Distance")
@@ -365,7 +381,11 @@ def configure_meshfield(
     #
     # control distance to plug boundary
     boundary_distance = field.add("Distance")
-    field.setNumbers(boundary_distance, "FacesList", [tags["curved_area_tag"]])
+    field.setNumbers(
+        boundary_distance,
+        "FacesList",
+        [tags["curved_area_tag"], tags["top_area_tag"], tags["bottom_area_tag"]],
+    )
     boundary_threshold = field.add("Threshold")
     field.setNumber(boundary_threshold, "InField", boundary_distance)
     field.setNumber(boundary_threshold, "LcMin", min_boundary_res)
@@ -377,7 +397,7 @@ def configure_meshfield(
     field.setNumbers(
         minimum_field,
         "FieldsList",
-        [mesophyll_threshold, inlet_threshold, boundary_threshold],
+        [point_threshold, mesophyll_threshold, boundary_threshold],
     )
     field.setAsBackgroundMesh(minimum_field)
     kernel.synchronize()
@@ -390,8 +410,8 @@ def run_gmsh_session(
     output_mesh_file: str | Path,
     global_resolution_factor: float,
     min_stomatal_feature: float,
+    max_stomatal_feature: float,
     min_cellular_feature: float,
-    min_stomatal_dist_factor: float,
     max_stomatal_dist_factor: float,
     min_cellular_dist_factor: float,
     max_cellular_dist_factor: float,
@@ -438,8 +458,8 @@ def run_gmsh_session(
         plug_aspect,
         global_resolution_factor,
         min_stomatal_feature,
+        max_stomatal_feature,
         min_cellular_feature,
-        min_stomatal_dist_factor,
         max_stomatal_dist_factor,
         min_cellular_dist_factor,
         max_cellular_dist_factor,
@@ -461,7 +481,7 @@ def build_cylinder_model(
     plug_aspect: float,
     global_resolution_factor: float,
     min_stomatal_feature: float,
-    min_stomatal_dist_factor: float,
+    max_stomatal_feature: float,
     max_stomatal_dist_factor: float,
     min_boundary_dist_factor: float,
     max_boundary_dist_factor: float,
@@ -572,8 +592,7 @@ def build_cylinder_model(
         2 * np.pi * plug_aspect / min_points_boundary * global_resolution_factor
     )
     #
-    min_stomatal_dist = min_stomatal_feature * min_stomatal_dist_factor
-    max_stomatal_dist = min_stomatal_feature * max_stomatal_dist_factor
+    max_stomatal_dist = max_stomatal_feature * max_stomatal_dist_factor
     min_boundary_dist = (
         min_boundary_res * min_boundary_dist_factor / global_resolution_factor
     )
@@ -588,7 +607,7 @@ def build_cylinder_model(
     field.setNumber(inlet_threshold, "InField", inlet_distance)
     field.setNumber(inlet_threshold, "LcMin", min_stomatal_res)
     field.setNumber(inlet_threshold, "LcMax", max_global_res)
-    field.setNumber(inlet_threshold, "DistMin", min_stomatal_dist)
+    field.setNumber(inlet_threshold, "DistMin", max_stomatal_feature)
     field.setNumber(inlet_threshold, "DistMax", max_stomatal_dist)
     #
     # control distance to plug boundary

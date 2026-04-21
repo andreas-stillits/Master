@@ -138,16 +138,16 @@ class MeshingConfig(BaseModel):
     )
 
     global_resolution_factor: float = 2.0
-    min_stomatal_feature: float = 0.008
+    min_stomatal_feature: float = 0.004
+    max_stomatal_feature: float = 0.08
     min_cellular_feature: float = 0.008
-    min_stomatal_dist_factor: float = 4.0
-    max_stomatal_dist_factor: float = 8.0
+    max_stomatal_dist_factor: float = 4.0
     min_cellular_dist_factor: float = 4.0
     max_cellular_dist_factor: float = 8.0
     min_boundary_dist_factor: float = 2.0
     max_boundary_dist_factor: float = 4.0
-    min_points_boundary: int = 30
-    max_points_boundary: int = 40
+    min_points_boundary: int = 35
+    max_points_boundary: int = 70
     boundary_margin_fraction: float = 0.05
     substomatal_cavity_margin_fraction: float = 0.05
     tolerance: float = 0.01
@@ -155,6 +155,7 @@ class MeshingConfig(BaseModel):
     cli_hints: ClassVar[dict[str, str]] = {
         "global_resolution_factor": "Factor to determine global meshing resolution based on plug dimensions",
         "min_stomatal_feature": "Minimum feature size for stomatal pores",
+        "max_stomatal_feature": "Maximum feature size for stomatal pores",
         "min_cellular_feature": "Minimum feature size for cellular structures",
         "min_stomatal_dist_factor": "Minimum distance factor for stomatal pores",
         "max_stomatal_dist_factor": "Maximum distance factor for stomatal pores",
@@ -193,8 +194,6 @@ class ValidationConfig(BaseModel):
     )  # chii, absorption, compensation
     parameters_diffusion: tuple[float, ...] = (0.75, 0.2)  # chii, chi_top
     stomatal_aspect: float = 0.04
-    stomatal_epsilon: float = 0.02
-    kappa: float = 1e8
     ksp_type: str = "cg"
     ksp_rtol: float = 1e-8
     pc_type: str = "jacobi"
@@ -233,8 +232,6 @@ class UniformSolutionConfig(BaseModel):
     absorption: float = 1.0
     compensation: float = 0.1
     stomatal_aspect: float = 0.04
-    stomatal_epsilon: float = 0.02
-    kappa: float = 1e8
     ksp_type: str = "cg"
     ksp_rtol: float = 1e-8
     pc_type: str = "jacobi"

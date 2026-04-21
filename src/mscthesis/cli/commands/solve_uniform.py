@@ -38,8 +38,6 @@ def _cmd(args: argparse.Namespace) -> None:
 
     solver_config = UniformSolverConfig(
         cmdconfig.stomatal_aspect,
-        cmdconfig.stomatal_epsilon,
-        cmdconfig.kappa,
         cmdconfig.ksp_type,
         cmdconfig.ksp_rtol,
         cmdconfig.pc_type,
