@@ -48,8 +48,6 @@ def _cmd(args: argparse.Namespace) -> None:
 
     solver_config = UniformSolverConfig(
         cmdconfig.stomatal_aspect,
-        cmdconfig.stomatal_epsilon,
-        cmdconfig.kappa,
         cmdconfig.ksp_type,
         cmdconfig.ksp_rtol,
         cmdconfig.pc_type,
@@ -75,9 +73,9 @@ def _cmd(args: argparse.Namespace) -> None:
     # annotate sample id to ease later aggregation across scans
     dataframe["sample_id"] = sample_id
 
-    plot_scanning_results(dataframe, process_paths.plots)
-
     save_dataframe(dataframe, scan_path)
+
+    plot_scanning_results(dataframe, process_paths.plots)
 
     metadata = {
         "num_simulations": len(workload),

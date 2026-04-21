@@ -71,8 +71,8 @@ def _cmd(args: argparse.Namespace) -> None:
 
         meshing_args = (
             config.mesh.min_stomatal_feature,
+            config.mesh.max_stomatal_feature,
             config.mesh.min_cellular_feature,
-            config.mesh.min_stomatal_dist_factor,
             config.mesh.max_stomatal_dist_factor,
             config.mesh.min_cellular_dist_factor,
             config.mesh.max_cellular_dist_factor,
@@ -99,8 +99,6 @@ def _cmd(args: argparse.Namespace) -> None:
             SolverClass = UniformSolver
             solver_config = UniformSolverConfig(
                 cmdconfig.stomatal_aspect,
-                cmdconfig.stomatal_epsilon,
-                cmdconfig.kappa,
                 cmdconfig.ksp_type,
                 cmdconfig.ksp_rtol,
                 cmdconfig.pc_type,
@@ -112,8 +110,6 @@ def _cmd(args: argparse.Namespace) -> None:
             SolverClass = DiffusionSolver
             solver_config = DiffusionSolverConfig(
                 cmdconfig.stomatal_aspect,
-                cmdconfig.stomatal_epsilon,
-                cmdconfig.kappa,
                 cmdconfig.ksp_type,
                 cmdconfig.ksp_rtol,
                 cmdconfig.pc_type,

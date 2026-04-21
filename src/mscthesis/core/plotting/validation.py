@@ -22,7 +22,7 @@ colors = {
     "curved_flux_direct": "#903b7a",
     "top_flux_direct": "#9467bd",
     "mesophyll_flux_equiv": "#317134",
-    "stomatal_flux_equiv": "#283375",
+    "stomatal_flux_direct": "#283375",
 }
 
 
@@ -78,12 +78,12 @@ def create_qoi_figure(df: pd.DataFrame, ax0: plt.Axes, ax1: plt.Axes) -> None:
     keys_conc = ["substomatal_mean", "surface_mean", "top_mean"]
     labels_conc = [r"$C_{st}$", r"$C_{m}$", r"$C_{top}$"]
 
-    keys_flux = ["stomatal_flux_equiv", "mesophyll_flux_equiv", "top_flux_direct"]
-    labels_flux = [r"$A_{st}$", r"$A_{m}$", r"$A_{top}$"]
+    keys_flux = ["mesophyll_flux_equiv", "top_flux_direct"]
+    labels_flux = [r"$A_{m}$", r"$A_{top}$"]
 
     for df, linestyle in zip([df1, df2], ["-", "--"], strict=True):
         labels_conc = ["", "", ""] if linestyle == "--" else labels_conc
-        labels_flux = ["", "", ""] if linestyle == "--" else labels_flux
+        labels_flux = ["", ""] if linestyle == "--" else labels_flux
         for key, label in zip(keys_conc, labels_conc, strict=True):
             ax0.plot(
                 x, _npy(df, key), linestyle=linestyle, label=label, color=colors[key]
@@ -108,9 +108,7 @@ def create_bc_adherence_figure(df: pd.DataFrame, ax0: plt.Axes, ax1: plt.Axes) -
     for df, linestyle in zip([df1, df2], ["-", "--"], strict=True):
         flux_m_direct = _npy(df, "mesophyll_flux_direct")
         flux_m_equiv = _npy(df, "mesophyll_flux_equiv")
-        flux_st_direct = _npy(df, "stomatal_flux_direct")
-        flux_st_equiv = _npy(df, "stomatal_flux_equiv")
-        flux_truth = flux_st_equiv[np.argmin(x)]
+        flux_truth = flux_m_equiv[np.argmin(x)]
         flux_curved = _npy(df, "curved_flux_direct") / flux_truth
         fluc_top = _npy(df, "top_flux_direct") / flux_truth
         ax0.plot(
@@ -135,20 +133,13 @@ def create_bc_adherence_figure(df: pd.DataFrame, ax0: plt.Axes, ax1: plt.Axes) -
             label="mesophyll" if linestyle == "-" else "",
             color=colors["mesophyll_flux_equiv"],
         )
-        ax1.plot(
-            x,
-            _rel_error(flux_st_equiv, flux_st_direct),
-            linestyle=linestyle,
-            label="stomatal" if linestyle == "-" else "",
-            color=colors["stomatal_flux_equiv"],
-        )
 
     _std_layout(ax0, ylabel="Relative flux magnitude", title="Neumann BC adherence")
     _std_layout(
         ax1,
         xlabel="Resolution factor",
         ylabel="Relative difference",
-        title="Inlet BC adherence",
+        title="Robin BC adherence",
         ylog=False,
     )
     return
@@ -165,8 +156,8 @@ def create_convergence_figure(
     #
     keys_conc = ["substomatal_mean", "surface_mean", "top_mean"]
     labels_conc = [r"$C_{st}$", r"$C_{m}$", r"$C_{top}$"]
-    keys_flux = ["stomatal_flux_equiv", "mesophyll_flux_equiv", "top_flux_direct"]
-    labels_flux = [r"$A_{st}$", r"$A_{m}$", r"$A_{top}$"]
+    keys_flux = ["mesophyll_flux_equiv", "top_flux_direct"]
+    labels_flux = [r"$A_{m}$", r"$A_{top}$"]
     ax.hlines(
         tolerance,
         np.min(x),
@@ -176,10 +167,10 @@ def create_convergence_figure(
         linewidth=2.0,
         label=f"{100*tolerance:.0f}% tolerance",
     )
-    true_flux = _npy(df2, "stomatal_flux_equiv")[np.argmin(x)]
+    true_flux = _npy(df2, "mesophyll_flux_equiv")[np.argmin(x)]
     for df, linestyle in zip([df1, df2], ["-", "--"], strict=True):
         labels_conc = ["", "", ""] if linestyle == "--" else labels_conc
-        labels_flux = ["", "", ""] if linestyle == "--" else labels_flux
+        labels_flux = ["", ""] if linestyle == "--" else labels_flux
         #
         for key, label in zip(keys_conc, labels_conc, strict=True):
             q1s = _npy(df, key)
@@ -213,7 +204,7 @@ def create_convergence_figure(
         ax,
         xlabel="Resolution factor",
         ylabel="Relative difference to CG2",
-        title="Convergence to target CG2 solution",
+        title="Convergence to CG2 solution",
         ylog=True,
         ymin=1e-4,
     )

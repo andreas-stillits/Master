@@ -7,7 +7,7 @@ import numpy as np
 import ufl
 from dolfinx import default_scalar_type, fem
 from dolfinx.fem.petsc import LinearProblem
-from dolfinx.mesh import Mesh, locate_entities_boundary, meshtags
+from dolfinx.mesh import Mesh, locate_entities_boundary, meshtags, compute_midpoints
 
 
 @dataclass
@@ -63,14 +63,16 @@ class BaseSolver:
                 r2 <= self.stomatal_aspect**2 + tol
             )
 
-        inlet_facets_geo = locate_entities_boundary(self.mesh, fdim, inlet_marker)
+        # inlet_facets_geo = locate_entities_boundary(self.mesh, fdim, inlet_marker)
 
         # restrict candidates to come from the BOTTOM tag group
         bottom_facets = facet_tags.indices[facet_tags.values == self.tags.BOTTOM]
-        bottom_set = set(map(int, bottom_facets))
-        inlet_facets = np.array(
-            [f for f in inlet_facets_geo if int(f) in bottom_set], dtype=np.int32
+        mid = compute_midpoints(self.mesh, fdim, bottom_facets)
+        r2_mid = mid[:, 0] ** 2 + mid[:, 1] ** 2
+        mask = np.isclose(mid[:, 2], 0.0, atol=tol) & (
+            r2_mid <= self.stomatal_aspect**2 + tol
         )
+        inlet_facets = bottom_facets[mask]
 
         # map tags by facet index
         tag_map = {
@@ -101,12 +103,7 @@ class BaseSolver:
             subdomain_data=self.cell_tags,
             metadata={"quadrature_degree": self.quad_degree},
         )
-        self.ds_gmsh = ufl.Measure(
-            "ds",
-            domain=self.mesh,
-            subdomain_data=facet_tags,
-        )
-        self.ds_bc = ufl.Measure(
+        self.ds = ufl.Measure(
             "ds",
             domain=self.mesh,
             subdomain_data=self.facet_tags,
@@ -126,24 +123,28 @@ class BaseSolver:
         # plug
         self.plug_area = float(
             fem.assemble_scalar(
-                fem.form(1.0 * self.ds_gmsh(self.tags.BOTTOM))  # type: ignore[reportArgumentType]
+                fem.form(1.0 * self.ds(self.tags.TOP))  # type: ignore[reportArgumentType]
             )
         )
         self.plug_aspect = np.sqrt(self.plug_area / np.pi)  # radius of cylindrical plug
         # curved
         self.curved_area = float(
             fem.assemble_scalar(
-                fem.form(1.0 * self.ds_gmsh(self.tags.CURVED))  # type: ignore[reportArgumentType]
+                fem.form(1.0 * self.ds(self.tags.CURVED))  # type: ignore[reportArgumentType]
             )
         )
         # mesophyll
         self.mesophyll_area = float(
             fem.assemble_scalar(
-                fem.form(1.0 * self.ds_gmsh(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
+                fem.form(1.0 * self.ds(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
             )
         )
         self.mesophyll_area_fraction = self.mesophyll_area / self.plug_area
-        self.stomatal_area = np.pi * self.stomatal_aspect**2
+        self.stomatal_area = float(
+            fem.assemble_scalar(
+                fem.form(1.0 * self.ds(self.tags.INLET))  # type: ignore[reportArgumentType]
+            )
+        )
         self.stomatal_area_fraction = self.stomatal_area / self.plug_area
         return
 
@@ -154,36 +155,43 @@ class BaseSolver:
         stomatal_flux_direct = float(
             fem.assemble_scalar(
                 fem.form(
-                    ufl.dot(gradient, normal) * self.ds_bc(self.tags.INLET)
+                    ufl.dot(gradient, normal) * self.ds(self.tags.INLET)
                 )  # type: ignore[reportArgumentType]
             )
         )
+        # bottom
+        bottom_flux_direct = float(
+            fem.assemble_scalar(
+                fem.form(ufl.dot(gradient, normal) * self.ds(self.tags.BOTTOM))
+            )
+        )
+
         # mesophyll
         mesophyll_flux_direct = float(
             fem.assemble_scalar(
-                fem.form(ufl.dot(gradient, normal) * self.ds_bc(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
+                fem.form(ufl.dot(gradient, normal) * self.ds(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
             )
         )
         mesophyll_flux_equiv = float(
             fem.assemble_scalar(
-                fem.form(self.surface_coeff * (solution - self.compensation) * self.ds_bc(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
+                fem.form(self.surface_coeff * (solution - self.compensation) * self.ds(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
             )
         )
         # curved surface flux
         curved_flux_direct = float(
             fem.assemble_scalar(
-                fem.form(ufl.dot(gradient, normal) * self.ds_bc(self.tags.CURVED))  # type: ignore[reportArgumentType]
+                fem.form(ufl.dot(gradient, normal) * self.ds(self.tags.CURVED))  # type: ignore[reportArgumentType]
             )
         )
         # top surface flux
         top_flux_direct = float(
             fem.assemble_scalar(
-                fem.form(ufl.dot(gradient, normal) * self.ds_bc(self.tags.TOP))  # type: ignore[reportArgumentType]
+                fem.form(ufl.dot(gradient, normal) * self.ds(self.tags.TOP))  # type: ignore[reportArgumentType]
             )
         )
         # total flux balance
         total_flux_direct = float(
-            fem.assemble_scalar(fem.form(ufl.dot(gradient, normal) * self.ds_bc))  # type: ignore[reportArgumentType]
+            fem.assemble_scalar(fem.form(ufl.dot(gradient, normal) * self.ds))  # type: ignore[reportArgumentType]
         )
         # ---------------------------------------------------------------------------
         # CO2 CONCENTRATIONS
@@ -191,7 +199,7 @@ class BaseSolver:
         # substomatal concentration
         substomatal_conc = float(
             fem.assemble_scalar(
-                fem.form(solution * self.ds_bc(self.tags.INLET))  # type: ignore[reportArgumentType]
+                fem.form(solution * self.ds(self.tags.INLET))  # type: ignore[reportArgumentType]
             )
             / self.stomatal_area
         )
@@ -199,7 +207,7 @@ class BaseSolver:
         # top surface concentration
         top_concentration = float(
             fem.assemble_scalar(
-                fem.form(solution * self.ds_bc(self.tags.TOP))  # type: ignore[reportArgumentType]
+                fem.form(solution * self.ds(self.tags.TOP))  # type: ignore[reportArgumentType]
             )
             / self.plug_area
         )
@@ -228,7 +236,7 @@ class BaseSolver:
         surface_mean_conc = (
             float(
                 fem.assemble_scalar(
-                    fem.form(solution * self.ds_bc(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
+                    fem.form(solution * self.ds(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
                 )
             )
             / self.mesophyll_area
@@ -240,7 +248,7 @@ class BaseSolver:
         surface_variance = (
             float(
                 fem.assemble_scalar(
-                    fem.form((solution - surface_mean_conc) ** 2 * self.ds_bc(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
+                    fem.form((solution - surface_mean_conc) ** 2 * self.ds(self.tags.MESOPHYLL))  # type: ignore[reportArgumentType]
                 )
             )
             / self.mesophyll_area
@@ -258,6 +266,7 @@ class BaseSolver:
 
         return {
             "stomatal_flux_direct": stomatal_flux_direct,
+            "bottom_flux_direct": bottom_flux_direct,
             "mesophyll_flux_direct": mesophyll_flux_direct,
             "mesophyll_flux_equiv": mesophyll_flux_equiv,
             "curved_flux_direct": curved_flux_direct,
@@ -332,8 +341,8 @@ class UniformSolver(BaseSolver):
 
         a = ufl.inner(ufl.grad(chi), ufl.grad(v)) * self.dx(
             self.tags.AIRSPACE
-        ) + self.surface_coeff * chi * v * self.ds_bc(self.tags.MESOPHYLL)
-        L = self.surface_coeff * self.compensation * v * self.ds_bc(self.tags.MESOPHYLL)
+        ) + self.surface_coeff * chi * v * self.ds(self.tags.MESOPHYLL)
+        L = self.surface_coeff * self.compensation * v * self.ds(self.tags.MESOPHYLL)
 
         bc_inlet = fem.dirichletbc(self.chii, self.inlet_dofs, self.functionspace)
 
