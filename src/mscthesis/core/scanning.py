@@ -12,34 +12,41 @@ from ..utilities.log import log_call
 
 @log_call()
 def generate_workload(
-    absorption_range: tuple[float, float, int],
     transport_range: tuple[float, float, int],
+    absorption_range: tuple[float, float, int],
     compensation: float,
+    assumed_geometry_factor: float = 2.0,
 ) -> list[tuple[float, float]]:
     """
     Generate a workload of (absorption, transport) pairs based on the specified ranges.
     Use logarithmic spacing for both absorption and transport values.
     Args:
-        absorption_range (float, float, int): A tuple (min, max, num)
         transport_range (float, float, int): A tuple (min, max, num)
+        absorption_range (float, float, int): A tuple (min, max, num)
     Returns:
-        workload (list[(float, float)]): A list of (absorption, transport) pairs of size N_a x N_t.
+        workload (list[(float, float)]): A list of (chii, absorption) pairs of size N_c x N_a.
     """
 
     # tiny helper function
     def _get_logspace(start: float, stop: float, num: int) -> np.ndarray:
         return np.logspace(np.log10(start), np.log10(stop), num)
 
+    def _get_chii(transport: float, absorption: float) -> float:
+        return 1 - (1 - compensation) / (
+            1 + transport / assumed_geometry_factor + transport / absorption
+        )
+
     # get logspaced values
-    absorption_values = _get_logspace(*absorption_range)
     transport_values = _get_logspace(*transport_range)
+    absorption_values = _get_logspace(*absorption_range)
 
     # create all combinations of the two
     workload: list[tuple[float, float]] = []
 
     for absorption in absorption_values:
         for transport in transport_values:
-            workload.append((absorption, transport, compensation))
+            chii = _get_chii(transport, absorption)
+            workload.append((chii, absorption, compensation))
 
     return workload
 
@@ -72,11 +79,11 @@ def run_batch(
         mesh_ctx,
     )
 
-    for absorption, transport, compensation in batch:
-        _, analysis = solver.solve_for(absorption, transport, compensation)
+    for chii, absorption, compensation in batch:
+        _, analysis = solver.solve_for(chii, absorption, compensation)
         result = {
+            "chii": chii,
             "absorption": absorption,
-            "transport": transport,
             "compensation": compensation,
             **analysis,
         }

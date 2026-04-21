@@ -266,9 +266,9 @@ class ScanningConfig(BaseModel):
     absorption_min: float = 0.01
     absorption_max: float = 100.0
     absorption_num: int = 10
-    chii_min: float = 0.11
-    chii_max: float = 0.99
-    chii_num: int = 10
+    transport_min: float = 0.01
+    transport_max: float = 100.0
+    transport_num: int = 10
     compensation: float = 0.1
     stomatal_aspect: float = 0.04
     ksp_type: str = "cg"
@@ -277,14 +277,15 @@ class ScanningConfig(BaseModel):
     quad_degree: int = 4
     order: int = 2
     max_workers: int = 16
+    geometry_factor: float = 2.0
 
     cli_hints: ClassVar[dict[str, str]] = {
         "absorption_min": "Minimum absorption value for scanning",
         "absorption_max": "Maximum absorption value for scanning",
         "absorption_num": "Number of absorption values to scan",
-        "chii_min": "Minimum substomatal conc value for scanning",
-        "chii_max": "Maximum substomatal conc value for scanning",
-        "chii_num": "Number of substomatal conc values to scan",
+        "transport_min": "Minimum transport value for scanning",
+        "transport_max": "Maximum transport value for scanning",
+        "transport_num": "Number of transport values to scan",
         "compensation": "Boundary condition value for the mesophyll flux",
         "stomatal_aspect": "Aspect ratio of the stomatal pore",
         "stomatal_epsilon": "Smoothing parameter for the stomatal envelope function",

@@ -31,17 +31,17 @@ QUAD_DEGREE: int = 4
 ORDER: int = 2
 
 GLOBAL_RESOLUTION_FACTOR: float = 2.0
-MIN_STOMATAL_FEATURE: float = 0.008
-MIN_STOMATAL_DIST_FACTOR: float = 4.0
+MIN_STOMATAL_FEATURE: float = 0.002
+MAX_STOMATAL_FEATURE: float = 0.50
 MAX_STOMATAL_DIST_FACTOR: float = 8.0
 MIN_BOUNDARY_DIST_FACTOR: float = 2.0
 MAX_BOUNDARY_DIST_FACTOR: float = 4.0
-MIN_POINTS_BOUNDARY: int = 60
-MAX_POINTS_BOUNDARY: int = 40
+MIN_POINTS_BOUNDARY: int = 50
+MAX_POINTS_BOUNDARY: int = 100
 TOLERANCE: float = 1e-2
 
-TRANSPORT = 10.0
-TOP_CONCENTRATION = 0.1
+CHII: float = 0.75
+CHI_TOP = 0.25
 
 
 def _generate_meshing_batches(
@@ -79,7 +79,7 @@ def _run_meshing_session(
         plug_aspect,
         GLOBAL_RESOLUTION_FACTOR,
         MIN_STOMATAL_FEATURE,
-        MIN_STOMATAL_DIST_FACTOR,
+        MAX_STOMATAL_FEATURE,
         MAX_STOMATAL_DIST_FACTOR,
         MIN_BOUNDARY_DIST_FACTOR,
         MAX_BOUNDARY_DIST_FACTOR,
@@ -100,21 +100,19 @@ def _run_solution_session(
         mesh_ctx = load_volumetric_mesh(mesh_file)
         solver_config = DiffusionSolverConfig(
             stomatal_aspect,
-            STOMATAL_EPSILON,
-            KSP_TYPE,
             KSP_RTOL,
             PC_TYPE,
             QUAD_DEGREE,
             ORDER,
         )
         solver = DiffusionSolver(solver_config, mesh_ctx)
-        solution, analysis = solver.solve_for(TOP_CONCENTRATION, TRANSPORT)
+        solution, analysis = solver.solve_for(CHII, CHI_TOP)
         results.append(
             {
                 "plug_aspect": plug_aspect,
                 "stomatal_aspect": stomatal_aspect,
-                "top_concentration": TOP_CONCENTRATION,
-                "transport": TRANSPORT,
+                "top_concentration": CHI_TOP,
+                "chii": CHII,
                 **analysis,
             }
         )

@@ -258,8 +258,8 @@ class BaseSolver:
 
         # stomatal conductance
         tol = 1e-6
-        gamma = (
-            np.abs(stomatal_flux_direct / (1.0 - substomatal_conc) / self.plug_area)
+        transport = (
+            np.abs(mesophyll_flux_equiv / (1.0 - substomatal_conc) / self.plug_area)
             if substomatal_conc < 1.0 - tol
             else None
         )
@@ -285,7 +285,7 @@ class BaseSolver:
             "stomatal_area_fraction": self.stomatal_area_fraction,
             "mesophyll_area_fraction": self.mesophyll_area_fraction,
             "porosity": self.airspace_volume / self.plug_area,
-            "gamma": gamma,
+            "transport": transport,
         }
 
     def solve_for(

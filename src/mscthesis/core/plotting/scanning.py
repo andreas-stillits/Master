@@ -39,27 +39,41 @@ def plot_heatmap(fig: plt.Figure, ax: plt.Axes, pivot: pd.DataFrame) -> None:
     return
 
 
+# write a heat map version that uses scatter on the raw dataframe instead of pivoting to avoid the need for a regular grid
+def plot_scatter_heatmap(
+    fig: plt.Figure,
+    ax: plt.Axes,
+    df: pd.DataFrame,
+    values: pd.Series,
+) -> None:
+    sc = ax.scatter(
+        df["absorption"],
+        df["transport"],
+        c=values,
+        s=100.0,
+        cmap="inferno",
+    )
+    fig.colorbar(sc, ax=ax)
+    return
+
+
 def plot_scanning_results(
     df: pd.DataFrame,
     output_dir: Path,
 ) -> None:
     use_style()
     #
-    pivot_args = {
-        "index": "transport",
-        "columns": "absorption",
-    }
     # create flux figure
     fig, ax = figure(size="single")
     std_layout(ax, title=r"Assimilation Rate $\alpha_N$")
-    flux = df.pivot(**pivot_args, values="stomatal_flux_equiv")
-    plot_heatmap(fig, ax, flux)
+    flux = df["mesophyll_flux_equiv"]
+    plot_scatter_heatmap(fig, ax, df, flux)
     save(fig, output_dir / "flux.pdf")
     #
     # create substomatal conc figure
     fig, ax = figure(size="single")
     std_layout(ax, title=r"Substomatal Concentration $\chi_i$")
-    chi_i = df.pivot(**pivot_args, values="substomatal_mean")
+    chi_i = df["substomatal_mean"]
 
     #
     # SHOWCASING THEORETICAL CURVES
@@ -72,39 +86,38 @@ def plot_scanning_results(
         ax.plot(phis, gammas, color="lightblue", linestyle="-", linewidth=0.5)
     #
     #
-
-    plot_heatmap(fig, ax, chi_i)
+    plot_scatter_heatmap(fig, ax, df, chi_i)
     save(fig, output_dir / "chi_i.pdf")
     #
     # create surface conc figure
     fig, ax = figure(size="single")
     std_layout(ax, title=r"Surface Concentration $\chi_m$")
-    chi_m = df.pivot(**pivot_args, values="surface_mean")
-    plot_heatmap(fig, ax, chi_m)
+    chi_m = df["surface_mean"]
+    plot_scatter_heatmap(fig, ax, df, chi_m)
     save(fig, output_dir / "chi_m.pdf")
     #
     # create ias drawdown figure
     fig, ax = figure(size="single")
     std_layout(ax, title=r"IAS Drawdown $\chi_i - \chi_m$")
     drawdown = chi_i - chi_m
-    plot_heatmap(fig, ax, drawdown)
+    plot_scatter_heatmap(fig, ax, df, drawdown)
     save(fig, output_dir / "ias_drawdown.pdf")
     #
     # create ias resistance figure
     fig, ax = figure(size="single")
     std_layout(ax, title=r"IAS Resistance $r_{ias}$")
-    plug_area = df.pivot(**pivot_args, values="plug_area")
+    plug_area = df["plug_area"]
     r_ias = (chi_i - chi_m) / (flux / plug_area)
-    plot_heatmap(fig, ax, r_ias)
+    plot_scatter_heatmap(fig, ax, df, r_ias)
     save(fig, output_dir / "ias_resistance.pdf")
     #
     # create surface diversity figure
     fig, ax = figure(size="single")
     std_layout(ax, title=r"Surface Diversity $\delta_m$")
-    pivot_var = df.pivot(**pivot_args, values="surface_variance")
-    pivot_mean = df.pivot(**pivot_args, values="surface_mean")
-    diversity_m = np.sqrt(pivot_var) / pivot_mean
-    plot_heatmap(fig, ax, diversity_m)
+    var = df["surface_variance"]
+    mean = df["surface_mean"]
+    variation = np.sqrt(var) / mean
+    plot_scatter_heatmap(fig, ax, df, variation)
     save(fig, output_dir / "surface_diversity.pdf")
     #
     return
