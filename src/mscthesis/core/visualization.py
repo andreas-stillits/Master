@@ -10,7 +10,6 @@ import pyvista as pv
 from dolfinx import fem
 from dolfinx.mesh import Mesh
 from dolfinx.plot import vtk_mesh
-
 from ..utilities.log import log_call
 
 
